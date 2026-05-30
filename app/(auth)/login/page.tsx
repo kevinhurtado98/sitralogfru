@@ -69,8 +69,18 @@ export default function LoginPage() {
         </div>
 
         {/* Footer */}
-        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)' }}>
-          © 2026 Fruchincha S.A.C. · Uso interno
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)' }}>
+            © 2026 Fruchincha S.A.C. · Uso interno
+          </span>
+          <span style={{
+            fontSize: 10, fontFamily: 'var(--fm)',
+            color: 'rgba(255,255,255,0.25)',
+            background: 'rgba(255,255,255,0.06)',
+            padding: '3px 8px', borderRadius: 4,
+          }}>
+            v{process.env.NEXT_PUBLIC_APP_VERSION}
+          </span>
         </div>
       </div>
 
