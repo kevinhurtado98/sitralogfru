@@ -53,6 +53,7 @@ body {
   color: var(--t1);
   background: var(--bg3);
   height: 100vh;
+  width: 100%;
   overflow: hidden;
   display: flex;
   min-width: 1280px;
