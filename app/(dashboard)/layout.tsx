@@ -1,17 +1,34 @@
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { Sidebar } from '@/components/shared/Sidebar'
+import { Topbar } from '@/components/shared/Topbar'
+
+function getInitials(name: string): string {
+  return name
+    .split(' ')
+    .map((p) => p[0] ?? '')
+    .slice(0, 2)
+    .join('')
+    .toUpperCase()
+}
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await auth()
   if (!session) redirect('/login')
 
+  const name = session.user?.name ?? 'Usuario'
+  const email = session.user?.email ?? ''
+  const initials = getInitials(name)
+
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
-      <Sidebar user={{ name: session.user?.name ?? '', role: session.user?.role ?? 'USUARIO' }} />
-      <main className="flex-1 overflow-y-auto">
-        <div className="p-6">{children}</div>
-      </main>
+    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+      <Sidebar user={{ name, email, initials }} />
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', minWidth: 0 }}>
+        <Topbar user={{ name, initials }} hasNotif />
+        <main style={{ flex: 1, overflowY: 'auto', padding: '18px 22px', background: 'var(--bg3)' }}>
+          {children}
+        </main>
+      </div>
     </div>
   )
 }

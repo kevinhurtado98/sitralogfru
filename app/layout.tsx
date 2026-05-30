@@ -1,8 +1,20 @@
 import type { Metadata } from 'next'
-import { Geist } from 'next/font/google'
+import { DM_Sans, DM_Mono } from 'next/font/google'
 import './globals.css'
 
-const geist = Geist({ subsets: ['latin'], variable: '--font-geist' })
+const dmSans = DM_Sans({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600'],
+  variable: '--font-dm-sans',
+  display: 'swap',
+})
+
+const dmMono = DM_Mono({
+  subsets: ['latin'],
+  weight: ['400', '500'],
+  variable: '--font-dm-mono',
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
   title: 'SITRALOGFRU – Fruchincha',
@@ -11,8 +23,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es" className={`${geist.variable} h-full antialiased`}>
-      <body className="min-h-full bg-gray-50 text-gray-900">{children}</body>
+    <html lang="es" className={`${dmSans.variable} ${dmMono.variable}`}>
+      <body>{children}</body>
     </html>
   )
 }

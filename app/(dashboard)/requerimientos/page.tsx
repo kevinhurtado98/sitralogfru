@@ -6,7 +6,7 @@ export default async function RequerimientosPage() {
     orderBy: { createdAt: 'desc' },
     include: {
       responsable: { select: { nombre: true } },
-      creadoPor: { select: { nombre: true } },
+      creadoPor:   { select: { nombre: true } },
     },
   })
   return <RequerimientosView requerimientos={requerimientos} />

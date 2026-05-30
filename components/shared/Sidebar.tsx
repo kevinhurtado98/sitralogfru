@@ -2,79 +2,153 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { signOut } from 'next-auth/react'
 import {
+  LayoutDashboard,
   FileText,
   ClipboardList,
-  Activity,
   BarChart2,
+  ShieldCheck,
+  Settings,
   LogOut,
-  ChevronRight,
-  Building2,
+  Truck,
 } from 'lucide-react'
-import { signOut } from 'next-auth/react'
 
-const navItems = [
-  { href: '/indicadores', label: 'Indicadores', icon: BarChart2 },
-  { href: '/comprobantes', label: 'Comprobantes', icon: FileText },
-  { href: '/requerimientos', label: 'Requerimientos', icon: ClipboardList },
-  { href: '/auditoria', label: 'Auditoría', icon: Activity },
+const NAV = [
+  { label: 'Principal', items: [
+    { href: '/indicadores',    label: 'Dashboard',       icon: LayoutDashboard },
+  ]},
+  { label: 'Módulos', items: [
+    { href: '/comprobantes',   label: 'Comprobantes',    icon: FileText },
+    { href: '/requerimientos', label: 'Requerimientos',  icon: ClipboardList },
+    { href: '/indicadores',    label: 'Indicadores',     icon: BarChart2 },
+    { href: '/auditoria',      label: 'Auditorías',      icon: ShieldCheck },
+    { href: '/configuracion',  label: 'Configuración',   icon: Settings },
+  ]},
 ]
 
 interface SidebarProps {
-  user: { name: string; role: string }
+  user: { name: string; email: string; initials: string }
 }
 
 export function Sidebar({ user }: SidebarProps) {
   const pathname = usePathname()
 
   return (
-    <aside className="w-64 bg-slate-900 text-white flex flex-col shrink-0 h-full">
+    <aside
+      style={{
+        width: 228, minWidth: 228,
+        background: 'var(--bg)',
+        borderRight: '1px solid var(--bl)',
+        display: 'flex', flexDirection: 'column',
+        height: '100vh',
+      }}
+    >
       {/* Logo */}
-      <div className="flex items-center gap-3 px-6 py-5 border-b border-slate-700">
-        <Building2 className="h-8 w-8 text-blue-400 shrink-0" />
-        <div>
-          <p className="font-bold text-sm leading-tight">SITRALOGFRU</p>
-          <p className="text-xs text-slate-400 leading-tight">Fruchincha</p>
+      <div style={{ padding: '20px 16px 16px', borderBottom: '1px solid var(--bl)' }}>
+        <div
+          style={{
+            width: 34, height: 34,
+            background: 'var(--t1)',
+            borderRadius: 'var(--rm)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            marginBottom: 9,
+          }}
+        >
+          <Truck size={17} color="#fff" />
         </div>
+        <div style={{ fontSize: 13, fontWeight: 600, letterSpacing: '-0.3px' }}>SITRALOGFRU</div>
+        <div style={{ fontSize: 10, color: 'var(--t3)', marginTop: 2 }}>Sistema de Gestión Logística</div>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 px-3 py-4 space-y-1">
-        {navItems.map(({ href, label, icon: Icon }) => {
-          const active = pathname.startsWith(href)
-          return (
-            <Link
-              key={href}
-              href={href}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                active
-                  ? 'bg-blue-600 text-white'
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-              }`}
+      {/* Nav */}
+      <div style={{ padding: '8px 0', overflowY: 'auto', flex: 1 }}>
+        {NAV.map((section) => (
+          <div key={section.label}>
+            <div
+              style={{
+                fontSize: 10, fontWeight: 500, color: 'var(--t3)',
+                padding: '8px 16px 3px',
+                textTransform: 'uppercase', letterSpacing: '0.7px',
+              }}
             >
-              <Icon className="h-4 w-4 shrink-0" />
-              {label}
-              {active && <ChevronRight className="h-3 w-3 ml-auto" />}
-            </Link>
-          )
-        })}
-      </nav>
+              {section.label}
+            </div>
+            {section.items.map(({ href, label, icon: Icon }) => {
+              const active = pathname.startsWith(href) && href !== '/indicadores'
+                ? true
+                : pathname === href || (href === '/indicadores' && (pathname === '/indicadores' || pathname === '/'))
 
-      {/* User info + logout */}
-      <div className="px-4 py-4 border-t border-slate-700">
-        <div className="mb-3">
-          <p className="text-sm font-medium truncate">{user.name}</p>
-          <p className="text-xs text-slate-400 capitalize">
-            {user.role === 'ADMIN' ? 'Administrador' : 'Usuario'}
-          </p>
+              return (
+                <Link
+                  key={`${href}-${label}`}
+                  href={href}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 9,
+                    padding: '7px 16px',
+                    cursor: 'pointer',
+                    borderLeft: `2px solid ${active ? 'var(--blue)' : 'transparent'}`,
+                    fontSize: 13,
+                    fontWeight: active ? 500 : 400,
+                    color: active ? 'var(--blue)' : 'var(--t2)',
+                    background: active ? 'var(--blue-bg)' : 'transparent',
+                    textDecoration: 'none',
+                    transition: 'all 0.12s',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!active) {
+                      e.currentTarget.style.background = 'var(--bg2)'
+                      e.currentTarget.style.color = 'var(--t1)'
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!active) {
+                      e.currentTarget.style.background = 'transparent'
+                      e.currentTarget.style.color = 'var(--t2)'
+                    }
+                  }}
+                >
+                  <Icon size={16} style={{ flexShrink: 0 }} />
+                  {label}
+                </Link>
+              )
+            })}
+          </div>
+        ))}
+      </div>
+
+      {/* User footer */}
+      <div style={{ padding: '12px 16px', borderTop: '1px solid var(--bl)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+          <div
+            style={{
+              width: 28, height: 28, borderRadius: '50%',
+              background: 'var(--blue-bg)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 10, fontWeight: 600, color: 'var(--blue-t)',
+              flexShrink: 0,
+            }}
+          >
+            {user.initials}
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 12, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {user.name}
+            </div>
+            <div style={{ fontSize: 10, color: 'var(--t3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {user.email}
+            </div>
+          </div>
+          <button
+            onClick={() => signOut({ callbackUrl: '/login' })}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'var(--t3)' }}
+            title="Cerrar sesión"
+          >
+            <LogOut size={15} />
+          </button>
         </div>
-        <button
-          onClick={() => signOut({ callbackUrl: '/login' })}
-          className="flex items-center gap-2 text-xs text-slate-400 hover:text-red-400 transition-colors w-full"
-        >
-          <LogOut className="h-3.5 w-3.5" />
-          Cerrar sesión
-        </button>
       </div>
     </aside>
   )

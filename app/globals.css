@@ -1,26 +1,397 @@
 @import "tailwindcss";
 
-@theme inline {
-  --font-sans: var(--font-geist);
-  --color-primary: #1a5276;
-  --color-primary-dark: #154360;
-  --color-primary-light: #2471a3;
+:root {
+  --bg:  #fff;
+  --bg2: #f7f7f5;
+  --bg3: #f0ede8;
+  --t1:  #1a1a18;
+  --t2:  #6b6b65;
+  --t3:  #9e9e96;
+  --bl:  rgba(0,0,0,0.08);
+  --bm:  rgba(0,0,0,0.14);
+
+  --blue:    #185FA5;
+  --blue-bg: #E6F1FB;
+  --blue-t:  #0C447C;
+
+  --green:    #3B6D11;
+  --green-bg: #EAF3DE;
+  --green-t:  #27500A;
+
+  --amber:    #854F0B;
+  --amber-bg: #FAEEDA;
+  --amber-t:  #633806;
+
+  --red:    #A32D2D;
+  --red-bg: #FCEBEB;
+  --red-t:  #791F1F;
+
+  --ora:    #993C1D;
+  --ora-bg: #FAECE7;
+  --ora-t:  #712B13;
+
+  --r:  6px;
+  --rm: 8px;
+  --rl: 12px;
+  --sh: 0 1px 4px rgba(0,0,0,0.06);
+
+  --f:  var(--font-dm-sans), 'DM Sans', sans-serif;
+  --fm: var(--font-dm-mono), 'DM Mono', monospace;
 }
 
-:root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* App 100% web — sin responsive, mínimo 1280px */
+html {
+  min-width: 1280px;
+  height: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans), Arial, sans-serif;
+  font-family: var(--f);
+  font-size: 14px;
+  color: var(--t1);
+  background: var(--bg3);
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  min-width: 1280px;
 }
 
-/* shadcn/ui CSS variables – Tailwind v4 compatible */
-@layer base {
-  :root {
-    --radius: 0.5rem;
-  }
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--bm); border-radius: 4px; }
+
+/* ── BADGES ─────────────────────────────────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
 }
+.badge-red   { background: var(--red-bg);   color: var(--red); }
+.badge-amber { background: var(--amber-bg); color: var(--amber); }
+.badge-green { background: var(--green-bg); color: var(--green); }
+.badge-ora   { background: var(--ora-bg);   color: var(--ora); }
+.badge-blue  { background: var(--blue-bg);  color: var(--blue-t); }
+.badge-slate { background: var(--bg2);      color: var(--t2); }
+
+/* ── STAG (semana de pago) ───────────────────────────────────────────── */
+.stag {
+  display: inline-block;
+  background: var(--blue-bg);
+  color: var(--blue-t);
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: var(--r);
+  font-weight: 500;
+  font-family: var(--fm);
+}
+
+/* ── SECTION TITLE ───────────────────────────────────────────────────── */
+.ss {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--t2);
+  margin-bottom: 12px;
+  padding-bottom: 9px;
+  border-bottom: 1px solid var(--bl);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ── ICON BUTTON ─────────────────────────────────────────────────────── */
+.ib {
+  width: 26px; height: 26px;
+  border: 1px solid var(--bl);
+  border-radius: var(--r);
+  background: var(--bg);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--t2);
+  transition: all 0.12s;
+  flex-shrink: 0;
+}
+.ib:hover { background: var(--bg2); border-color: var(--bm); color: var(--t1); }
+.ib-danger:hover { background: var(--red-bg); border-color: #F7C1C1; color: var(--red); }
+
+/* ── TOGGLE (registro contable) ──────────────────────────────────────── */
+.ctog-track {
+  width: 38px; height: 21px;
+  border-radius: 11px;
+  background: var(--bm);
+  position: relative;
+  cursor: pointer;
+  transition: background 0.18s;
+  flex-shrink: 0;
+}
+.ctog-track.on { background: var(--green); }
+.ctog-knob {
+  width: 15px; height: 15px;
+  border-radius: 50%;
+  background: #fff;
+  position: absolute;
+  top: 3px; left: 3px;
+  transition: left 0.18s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.22);
+  pointer-events: none;
+}
+.ctog-track.on .ctog-knob { left: 20px; }
+
+/* ── DETAIL CARD ─────────────────────────────────────────────────────── */
+.dc {
+  background: var(--bg);
+  border: 1px solid var(--bl);
+  border-radius: var(--rl);
+  padding: 18px;
+  margin-bottom: 14px;
+  box-shadow: var(--sh);
+}
+
+/* ── FILTER CARD ─────────────────────────────────────────────────────── */
+.fc {
+  background: var(--bg);
+  border: 1px solid var(--bl);
+  border-radius: var(--rl);
+  padding: 13px 15px;
+  margin-bottom: 14px;
+  box-shadow: var(--sh);
+}
+
+/* ── TABLE CONTAINER ─────────────────────────────────────────────────── */
+.tc {
+  background: var(--bg);
+  border: 1px solid var(--bl);
+  border-radius: var(--rl);
+  overflow: hidden;
+  box-shadow: var(--sh);
+  margin-bottom: 14px;
+}
+.tc table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  min-width: 960px;
+}
+.tc th {
+  padding: 8px 11px;
+  text-align: left;
+  color: var(--t2);
+  font-weight: 500;
+  font-size: 11px;
+  border-bottom: 1px solid var(--bl);
+  background: var(--bg2);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+}
+.tc td {
+  padding: 8px 11px;
+  border-bottom: 1px solid var(--bl);
+  color: var(--t1);
+  vertical-align: middle;
+}
+.tc tr:last-child td { border-bottom: none; }
+.tc tr:hover td { background: var(--bg2); }
+
+/* ── METRIC CARD ─────────────────────────────────────────────────────── */
+.mc {
+  background: var(--bg);
+  border: 1px solid var(--bl);
+  border-radius: var(--rl);
+  padding: 13px 15px;
+  box-shadow: var(--sh);
+}
+.mc-label { font-size: 11px; color: var(--t2); margin-bottom: 5px; line-height: 1.4; }
+.mc-value { font-size: 25px; font-weight: 600; letter-spacing: -1px; }
+.mc-value.r { color: var(--red); }
+.mc-value.a { color: var(--amber); }
+.mc-value.g { color: var(--green); }
+.mc-value.b { color: var(--blue); }
+
+/* ── ALERT ───────────────────────────────────────────────────────────── */
+.alert-warn {
+  background: var(--amber-bg);
+  border: 1px solid #FAC775;
+  color: var(--amber-t);
+  border-radius: var(--rm);
+  padding: 11px 13px;
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* ── TOPBAR ──────────────────────────────────────────────────────────── */
+.topbar {
+  background: var(--bg);
+  border-bottom: 1px solid var(--bl);
+  padding: 0 22px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+/* ── FORM INPUTS (module forms) ──────────────────────────────────────── */
+.fi {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.fi label {
+  font-size: 11px;
+  color: var(--t2);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.fi input, .fi select, .fi textarea {
+  font-size: 13px;
+  padding: 7px 9px;
+  border: 1px solid var(--bm);
+  border-radius: var(--r);
+  background: var(--bg);
+  color: var(--t1);
+  font-family: var(--f);
+  outline: none;
+  transition: border-color 0.12s;
+  width: 100%;
+}
+.fi input:focus, .fi select:focus, .fi textarea:focus { border-color: var(--blue); }
+
+/* Filter row inputs */
+.fg {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 100px;
+  flex: 1;
+}
+.fg label { font-size: 11px; color: var(--t2); font-weight: 500; }
+.fg input, .fg select {
+  height: 32px;
+  font-size: 13px;
+  padding: 0 8px;
+  border: 1px solid var(--bm);
+  border-radius: var(--r);
+  background: var(--bg);
+  color: var(--t1);
+  width: 100%;
+  font-family: var(--f);
+  outline: none;
+  transition: border-color 0.12s;
+}
+.fg input:focus, .fg select:focus { border-color: var(--blue); }
+
+/* ── BUTTONS ─────────────────────────────────────────────────────────── */
+.btn {
+  height: 32px;
+  padding: 0 13px;
+  font-size: 13px;
+  border: 1px solid var(--bm);
+  border-radius: var(--r);
+  cursor: pointer;
+  background: var(--bg);
+  color: var(--t1);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  font-family: var(--f);
+  transition: all 0.12s;
+  font-weight: 500;
+}
+.btn:hover { background: var(--bg2); }
+.btn-p { background: #1a1a18; border-color: #1a1a18; color: #fff; }
+.btn-p:hover { background: #2d2d2b; }
+.btn-g { background: var(--green); border-color: var(--green); color: #fff; }
+.btn-g:hover { background: var(--green-t); }
+.btn-b { background: var(--blue); border-color: var(--blue); color: #fff; }
+.btn-b:hover { background: var(--blue-t); }
+.btn-sm { height: 27px; padding: 0 10px; font-size: 12px; }
+
+/* ── AUDIT LIST ──────────────────────────────────────────────────────── */
+.ar {
+  display: flex;
+  gap: 11px;
+  padding: 11px 15px;
+  border-bottom: 1px solid var(--bl);
+  align-items: flex-start;
+  transition: background 0.1s;
+}
+.ar:last-child { border-bottom: none; }
+.ar:hover { background: var(--bg2); }
+
+/* ── QCARD (responsable quick select) ───────────────────────────────── */
+.qcard {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border: 1px solid var(--bl);
+  border-radius: var(--rm);
+  background: var(--bg);
+  cursor: pointer;
+  transition: all 0.15s;
+  user-select: none;
+}
+.qcard:hover { border-color: var(--blue); background: var(--blue-bg); }
+
+/* ── CHART BARS ──────────────────────────────────────────────────────── */
+.bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 9px;
+  height: 130px;
+  margin-bottom: 7px;
+}
+.bar-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  flex: 1;
+}
+.bar-fill {
+  width: 100%;
+  border-radius: 3px 3px 0 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 3px;
+  font-size: 10px;
+  color: #fff;
+  font-weight: 600;
+}
+.bar-label { font-size: 10px; color: var(--t3); }
+
+/* ── TOAST ───────────────────────────────────────────────────────────── */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #1a1a18;
+  color: #fff;
+  padding: 11px 16px;
+  border-radius: var(--rm);
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 999;
+  transform: translateY(60px);
+  opacity: 0;
+  transition: all 0.25s;
+  pointer-events: none;
+}
+.toast.show { transform: translateY(0); opacity: 1; }

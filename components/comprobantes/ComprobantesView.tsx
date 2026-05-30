@@ -1,138 +1,360 @@
 'use client'
 
-import Link from 'next/link'
 import { useState, useMemo } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
-import { StatusBadge } from '@/components/shared/StatusBadge'
-import { Upload, Search } from 'lucide-react'
+import Link from 'next/link'
 import { format } from 'date-fns'
-import { es } from 'date-fns/locale'
-import type { EstadoFactura, Moneda, TipoFactura } from '@prisma/client'
+import {
+  AlertTriangle, Search, Eye, Pencil, Trash2,
+  FileCode2, RotateCcw, CheckCheck, X, CircleCheck,
+} from 'lucide-react'
+import type { EstadoFactura, Moneda, FormaPago } from '@prisma/client'
 
-interface Factura {
+// ─── Types ───────────────────────────────────────────────────────────────────
+
+export interface FacturaRow {
   id: string
   proveedor: string
-  serie: string
-  numero: string
-  fechaVencimiento: Date
+  serie: string; numero: string
+  fechaVencimiento: Date | string
   moneda: Moneda
-  tipo: TipoFactura
-  montoNeto: unknown
+  montoNeto: number
   estado: EstadoFactura
-  formaPago: string | null
+  formaPago: FormaPago | null
   semanaPago: number | null
-  creadoPor: { nombre: string }
+  viernesPago: Date | string | null
+  registradoContable: boolean
+  fechaRegistroContable: Date | string | null
 }
 
-interface Props {
-  facturas: Factura[]
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+const MONEDA_PRE: Record<Moneda, string> = { SOLES: 'S/', DOLARES: '$', EUROS: '€' }
+const FORMA_LABEL: Record<FormaPago, string> = {
+  CREDITO: 'Crédito', FACTORING: 'Factoring',
+  FACTURA_NEGOCIABLE: 'Factura negociable', LETRA: 'Letra',
 }
 
-const monedaSymbol: Record<string, string> = {
-  SOLES: 'S/',
-  DOLARES: 'US$',
-  EUROS: '€',
+function estadoBadgeClass(e: EstadoFactura) {
+  return { POR_VENCER: 'badge-red', PENDIENTE: 'badge-amber', PAGADA: 'badge-green', VENCIDA: 'badge-red' }[e]
+}
+function estadoLabel(e: EstadoFactura) {
+  return { POR_VENCER: 'Por vencer', PENDIENTE: 'Pendiente', PAGADA: 'Pagada', VENCIDA: 'Vencida' }[e]
 }
 
-export function ComprobantesView({ facturas }: Props) {
-  const [busqueda, setBusqueda] = useState('')
+// ─── Toggle contable inline ───────────────────────────────────────────────────
+
+function ToggleContable({ factura, onToggle }: {
+  factura: FacturaRow
+  onToggle: () => void
+}) {
+  if (factura.registradoContable) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div className="ctog-track on" onClick={onToggle}>
+          <div className="ctog-knob" />
+        </div>
+        <span style={{ fontSize: 11, color: 'var(--green-t)', fontFamily: 'var(--fm)' }}>
+          ✓ {factura.fechaRegistroContable
+            ? format(new Date(factura.fechaRegistroContable), 'dd/MM/yyyy')
+            : ''}
+        </span>
+        <button
+          className="ib"
+          title="Deshacer"
+          onClick={(e) => { e.stopPropagation(); onToggle() }}
+          style={{ width: 22, height: 22 }}
+        >
+          <RotateCcw size={11} />
+        </button>
+      </div>
+    )
+  }
+  return (
+    <div
+      style={{ display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer' }}
+      onClick={onToggle}
+    >
+      <div className="ctog-track"><div className="ctog-knob" /></div>
+      <span style={{ fontSize: 11, color: 'var(--t3)' }}>Pendiente · registrar</span>
+    </div>
+  )
+}
+
+// ─── Main ─────────────────────────────────────────────────────────────────────
+
+export function ComprobantesView({ facturas: initial }: { facturas: FacturaRow[] }) {
+  const [facturas, setFacturas]     = useState(initial)
+  const [selected, setSelected]     = useState<string[]>([])
+  const [busqueda, setBusqueda]     = useState('')
+  const [filtroEstado, setFiltroEstado] = useState('')
+
+  const vencidas = facturas.filter((f) => f.estado === 'VENCIDA')
+  const sinContable = facturas.filter((f) => !f.registradoContable).length
 
   const filtradas = useMemo(() => {
-    const q = busqueda.toLowerCase()
-    if (!q) return facturas
-    return facturas.filter(
-      (f) =>
+    let r = facturas
+    if (busqueda) {
+      const q = busqueda.toLowerCase()
+      r = r.filter((f) =>
         f.proveedor.toLowerCase().includes(q) ||
         `${f.serie}-${f.numero}`.toLowerCase().includes(q)
+      )
+    }
+    if (filtroEstado) r = r.filter((f) => f.estado === filtroEstado)
+    return r
+  }, [facturas, busqueda, filtroEstado])
+
+  function toggleContable(id: string) {
+    setFacturas((prev) => prev.map((f) =>
+      f.id === id
+        ? {
+            ...f,
+            registradoContable: !f.registradoContable,
+            fechaRegistroContable: !f.registradoContable ? new Date() : null,
+          }
+        : f
+    ))
+  }
+
+  function toggleSel(id: string) {
+    setSelected((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     )
-  }, [facturas, busqueda])
+  }
+
+  function registrarSeleccionadas() {
+    const hoy = new Date()
+    setFacturas((prev) => prev.map((f) =>
+      selected.includes(f.id) && !f.registradoContable
+        ? { ...f, registradoContable: true, fechaRegistroContable: hoy }
+        : f
+    ))
+    setSelected([])
+  }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Comprobantes</h1>
-          <p className="text-sm text-gray-500 mt-1">{facturas.length} registros</p>
+    <>
+      {/* Alert vencidas */}
+      {vencidas.length > 0 && (
+        <div className="alert-warn">
+          <AlertTriangle size={16} style={{ color: 'var(--amber)', flexShrink: 0, marginTop: 1 }} />
+          <span>
+            <strong>{vencidas.length} factura{vencidas.length > 1 ? 's' : ''} vencida{vencidas.length > 1 ? 's' : ''}</strong>
+            {' '}sin pago registrado. Notificación enviada.
+          </span>
         </div>
-        <Button variant="primary" size="sm" asChild>
-          <Link href="/comprobantes/nuevo">
-            <Upload className="h-4 w-4" />
-            Subir comprobantes
-          </Link>
-        </Button>
+      )}
+
+      {/* Filtros */}
+      <div className="fc">
+        <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+          <div className="fg">
+            <label>Proveedor / N° factura</label>
+            <input
+              type="text"
+              placeholder="Buscar..."
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+            />
+          </div>
+          <div className="fg" style={{ maxWidth: 130 }}>
+            <label>Desde</label>
+            <input type="date" />
+          </div>
+          <div className="fg" style={{ maxWidth: 130 }}>
+            <label>Hasta</label>
+            <input type="date" />
+          </div>
+          <div className="fg" style={{ maxWidth: 130 }}>
+            <label>Semana pago</label>
+            <input type="text" placeholder="Sem. 20" />
+          </div>
+          <div className="fg" style={{ maxWidth: 140 }}>
+            <label>Estado</label>
+            <select value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)}>
+              <option value="">Todos</option>
+              <option value="POR_VENCER">Por vencer</option>
+              <option value="PENDIENTE">Pendiente</option>
+              <option value="PAGADA">Pagada</option>
+              <option value="VENCIDA">Vencida</option>
+            </select>
+          </div>
+          <div className="fg" style={{ maxWidth: 150 }}>
+            <label>Reg. contable</label>
+            <select>
+              <option value="">Todos</option>
+              <option value="pendiente">Pendiente</option>
+              <option value="registrado">Registrado</option>
+            </select>
+          </div>
+          <button className="btn btn-p">
+            <Search size={13} /> Filtrar
+          </button>
+        </div>
       </div>
 
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center gap-3">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Buscar por proveedor o N° factura..."
-                className="pl-9"
-                value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)}
-              />
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-100 bg-gray-50">
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">Factura</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">Proveedor</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">Vencimiento</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">Semana</th>
-                  <th className="text-right px-4 py-3 font-medium text-gray-600">Monto neto</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">Estado</th>
+      {/* Métricas */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(125px,1fr))', gap: 11, marginBottom: 16 }}>
+        <div className="mc">
+          <div className="mc-label">Total facturas</div>
+          <div className="mc-value b">{facturas.length}</div>
+        </div>
+        <div className="mc">
+          <div className="mc-label">Por vencer</div>
+          <div className="mc-value r">{facturas.filter((f) => f.estado === 'POR_VENCER').length}</div>
+        </div>
+        <div className="mc">
+          <div className="mc-label">Pendientes contable</div>
+          <div className="mc-value a">{sinContable}</div>
+        </div>
+        <div className="mc">
+          <div className="mc-label">Pagadas este mes</div>
+          <div className="mc-value g">{facturas.filter((f) => f.estado === 'PAGADA').length}</div>
+        </div>
+      </div>
+
+      {/* Barra selección masiva */}
+      {selected.length > 0 && (
+        <div style={{
+          background: 'var(--blue-bg)', border: '1px solid #B5D4F4',
+          borderRadius: 'var(--rm)', padding: '9px 14px', marginBottom: 12,
+          display: 'flex', alignItems: 'center', gap: 12,
+          fontSize: 13, color: 'var(--blue-t)',
+        }}>
+          <CheckCheck size={16} />
+          <span>
+            {selected.length} factura{selected.length > 1 ? 's' : ''} seleccionada{selected.length > 1 ? 's' : ''}
+          </span>
+          <button
+            className="btn btn-sm btn-g"
+            style={{ marginLeft: 'auto' }}
+            onClick={registrarSeleccionadas}
+          >
+            <CircleCheck size={12} /> Registrar contablemente
+          </button>
+          <button className="btn btn-sm" onClick={() => setSelected([])}>
+            <X size={12} />
+          </button>
+        </div>
+      )}
+
+      {/* Tabla */}
+      <div className="tc">
+        <div style={{
+          padding: '11px 15px',
+          borderBottom: '1px solid var(--bl)',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        }}>
+          <span style={{ fontSize: 13, fontWeight: 600 }}>Facturas registradas</span>
+          <Link href="/comprobantes/nuevo">
+            <button className="btn btn-sm">
+              <FileCode2 size={13} /> Importar XML
+            </button>
+          </Link>
+        </div>
+
+        <div style={{ overflowX: 'auto' }}>
+          <table>
+            <thead>
+              <tr>
+                <th style={{ width: 36 }}>
+                  <input
+                    type="checkbox"
+                    checked={selected.length === filtradas.length && filtradas.length > 0}
+                    onChange={(e) => setSelected(e.target.checked ? filtradas.map((f) => f.id) : [])}
+                  />
+                </th>
+                <th>N° Factura</th>
+                <th>Proveedor</th>
+                <th>F. Vencimiento</th>
+                <th>Moneda</th>
+                <th>Monto a pagar</th>
+                <th>Semana pago</th>
+                <th>Forma pago</th>
+                <th>Estado</th>
+                <th style={{ minWidth: 210 }}>✓ Registro contable</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtradas.length === 0 ? (
+                <tr>
+                  <td colSpan={11} style={{ textAlign: 'center', padding: '40px 0', color: 'var(--t3)' }}>
+                    No hay facturas registradas
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {filtradas.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="px-4 py-10 text-center text-gray-400 text-sm">
-                      No hay facturas registradas
-                    </td>
-                  </tr>
-                ) : (
-                  filtradas.map((f) => (
-                    <tr key={f.id} className="hover:bg-blue-50/40 transition-colors">
-                      <td className="px-4 py-3">
-                        <Link
-                          href={`/comprobantes/${f.id}`}
-                          className="font-mono text-blue-700 hover:underline"
-                        >
-                          {f.serie}-{f.numero}
-                        </Link>
-                      </td>
-                      <td className="px-4 py-3 text-gray-800 max-w-[200px] truncate">{f.proveedor}</td>
-                      <td className="px-4 py-3 text-gray-600">
-                        {format(new Date(f.fechaVencimiento), 'dd/MM/yyyy')}
-                      </td>
-                      <td className="px-4 py-3 text-gray-600">
-                        {f.semanaPago ? `Sem. ${f.semanaPago}` : '—'}
-                      </td>
-                      <td className="px-4 py-3 text-right font-mono font-medium">
-                        {monedaSymbol[f.moneda] ?? ''}{' '}
-                        {Number(f.montoNeto).toLocaleString('es-PE', {
-                          minimumFractionDigits: 2,
-                        })}
-                      </td>
-                      <td className="px-4 py-3">
-                        <StatusBadge status={f.estado} />
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+              ) : filtradas.map((f) => (
+                <tr
+                  key={f.id}
+                  style={{ background: selected.includes(f.id) ? 'var(--blue-bg)' : undefined }}
+                >
+                  <td style={{ textAlign: 'center' }}>
+                    <input
+                      type="checkbox"
+                      checked={selected.includes(f.id)}
+                      onChange={() => toggleSel(f.id)}
+                    />
+                  </td>
+                  <td>
+                    <span style={{ fontFamily: 'var(--fm)', fontSize: 12 }}>
+                      {f.serie}-{f.numero}
+                    </span>
+                  </td>
+                  <td style={{ maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {f.proveedor}
+                  </td>
+                  <td>{format(new Date(f.fechaVencimiento), 'dd/MM/yyyy')}</td>
+                  <td>
+                    <span className="badge badge-slate">
+                      {f.moneda === 'SOLES' ? 'PEN' : f.moneda === 'DOLARES' ? 'USD' : 'EUR'}
+                    </span>
+                  </td>
+                  <td style={{ fontWeight: 600 }}>
+                    {MONEDA_PRE[f.moneda]}{' '}
+                    {f.montoNeto.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
+                  </td>
+                  <td>
+                    {f.semanaPago && f.viernesPago ? (
+                      <span className="stag">
+                        Sem.{f.semanaPago} · Vie {format(new Date(f.viernesPago), 'dd/MM')}
+                      </span>
+                    ) : (
+                      <span style={{ color: 'var(--t3)' }}>—</span>
+                    )}
+                  </td>
+                  <td>{f.formaPago ? FORMA_LABEL[f.formaPago] : '—'}</td>
+                  <td>
+                    <span className={`badge ${estadoBadgeClass(f.estado)}`}>
+                      {estadoLabel(f.estado)}
+                    </span>
+                  </td>
+                  <td>
+                    <ToggleContable
+                      factura={f}
+                      onToggle={() => toggleContable(f.id)}
+                    />
+                  </td>
+                  <td>
+                    <div style={{ display: 'flex', gap: 4 }}>
+                      <Link href={`/comprobantes/${f.id}`}>
+                        <button className="ib" title="Ver detalle">
+                          <Eye size={13} />
+                        </button>
+                      </Link>
+                      <button className="ib" title="Editar">
+                        <Pencil size={13} />
+                      </button>
+                      <button className="ib ib-danger" title="Eliminar">
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </>
   )
 }

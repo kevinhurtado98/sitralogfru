@@ -8,14 +8,28 @@ interface Props {
 
 export default async function FacturaDetallePage({ params }: Props) {
   const { id } = await params
-  const factura = await prisma.factura.findUnique({
+
+  const raw = await prisma.factura.findUnique({
     where: { id },
     include: {
       notasCredito: true,
-      notasDebito: true,
-      creadoPor: { select: { nombre: true, email: true } },
+      notasDebito:  true,
+      creadoPor:    { select: { nombre: true, email: true } },
     },
   })
-  if (!factura) notFound()
+
+  if (!raw) notFound()
+
+  // Serialize Decimal → number
+  const factura = {
+    ...raw,
+    monto:       Number(raw.monto),
+    retencion:   Number(raw.retencion),
+    detraccion:  Number(raw.detraccion),
+    montoNeto:   Number(raw.montoNeto),
+    notasCredito: raw.notasCredito.map((n) => ({ ...n, monto: Number(n.monto) })),
+    notasDebito:  raw.notasDebito.map((n)  => ({ ...n, monto: Number(n.monto) })),
+  }
+
   return <FacturaDetalle factura={factura} />
 }
