@@ -4,6 +4,7 @@ import { signIn } from '@/lib/auth'
 import { AuthError } from 'next-auth'
 import { z } from 'zod'
 import { redirect } from 'next/navigation'
+import { isRedirectError } from 'next/dist/client/components/redirect-error'
 
 const schema = z.object({
   email: z.string().email({ message: 'Correo inválido' }),
@@ -32,9 +33,25 @@ export async function login(_prev: FormState, formData: FormData): Promise<FormS
       redirect: false,
     })
   } catch (error) {
+    // En NextAuth v5, un login exitoso puede lanzar NEXT_REDIRECT — hay que dejarlo pasar
+    if (isRedirectError(error)) throw error
+
     if (error instanceof AuthError) {
-      return { message: 'Credenciales incorrectas. Verifica tu correo y contraseña.' }
+      // Loguea el tipo exacto para verlo en Vercel Runtime Logs
+      console.error('[auth] AuthError tipo:', error.type, '| mensaje:', error.message)
+
+      switch (error.type) {
+        case 'CredentialsSignin':
+          return { message: 'Correo o contraseña incorrectos.' }
+        case 'CallbackRouteError':
+          return { message: 'Error al conectar con la base de datos. Revisa los logs.' }
+        default:
+          return { message: `Error de autenticación: ${error.type}` }
+      }
     }
+
+    // Error inesperado (no AuthError)
+    console.error('[auth] Error inesperado:', error)
     return { message: 'Error del servidor. Intenta de nuevo.' }
   }
 
