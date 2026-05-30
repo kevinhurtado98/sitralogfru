@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { format } from 'date-fns'
-import { CircleCheck, Upload, Pencil, Plus, Trash2, Mail, Search } from 'lucide-react'
+import { IconCircleCheck, IconUpload, IconPencil, IconPlus, IconTrash, IconMail, IconSearch } from '@tabler/icons-react'
 import type { Modulo } from '@prisma/client'
 
 interface AuditLog {
@@ -13,19 +13,19 @@ interface AuditLog {
 }
 
 const MODULO_STYLE: Record<string, { bg: string; color: string; icon: React.ReactNode; badgeCls: string; label: string }> = {
-  COMPROBANTES:   { bg: 'var(--blue-bg)',  color: 'var(--blue)',  icon: <Upload size={14} />,       badgeCls: 'badge-blue',  label: 'Comprobantes' },
-  REQUERIMIENTOS: { bg: 'var(--ora-bg)',   color: 'var(--ora)',   icon: <Pencil size={14} />,       badgeCls: 'badge-ora',   label: 'Requerimientos' },
-  USUARIOS:       { bg: 'var(--bg2)',      color: 'var(--t2)',    icon: <Plus size={14} />,         badgeCls: 'badge-slate', label: 'Usuarios' },
-  AUTH:           { bg: 'var(--green-bg)', color: 'var(--green)', icon: <CircleCheck size={14} />,  badgeCls: 'badge-green', label: 'Auth' },
+  COMPROBANTES:   { bg: 'var(--blue-bg)',  color: 'var(--blue)',  icon: <IconUpload size={14} />,       badgeCls: 'badge-blue',  label: 'Comprobantes' },
+  REQUERIMIENTOS: { bg: 'var(--ora-bg)',   color: 'var(--ora)',   icon: <IconPencil size={14} />,       badgeCls: 'badge-ora',   label: 'Requerimientos' },
+  USUARIOS:       { bg: 'var(--bg2)',      color: 'var(--t2)',    icon: <IconPlus size={14} />,         badgeCls: 'badge-slate', label: 'Usuarios' },
+  AUTH:           { bg: 'var(--green-bg)', color: 'var(--green)', icon: <IconCircleCheck size={14} />,  badgeCls: 'badge-green', label: 'Auth' },
 }
 
 const ACCION_ICON: Record<string, React.ReactNode> = {
-  IMPORTAR_XML:    <Upload size={14} />,
-  CREAR:           <Plus size={14} />,
-  EDITAR:          <Pencil size={14} />,
-  ELIMINAR:        <Trash2 size={14} />,
-  NOTIFICACION:    <Mail size={14} />,
-  REGISTRO_CONTABLE: <CircleCheck size={14} />,
+  IMPORTAR_XML:    <IconUpload size={14} />,
+  CREAR:           <IconPlus size={14} />,
+  EDITAR:          <IconPencil size={14} />,
+  ELIMINAR:        <IconTrash size={14} />,
+  NOTIFICACION:    <IconMail size={14} />,
+  REGISTRO_CONTABLE: <IconCircleCheck size={14} />,
 }
 
 export function AuditoriaView({ logs }: { logs: AuditLog[] }) {
@@ -63,7 +63,7 @@ export function AuditoriaView({ logs }: { logs: AuditLog[] }) {
           </div>
           <div className="fg" style={{ maxWidth: 130 }}><label>Desde</label><input type="date" /></div>
           <div className="fg" style={{ maxWidth: 130 }}><label>Hasta</label><input type="date" /></div>
-          <button className="btn btn-p"><Search size={13} /> Filtrar</button>
+          <button className="btn btn-p"><IconSearch size={13} /> Filtrar</button>
         </div>
       </div>
 
@@ -79,7 +79,7 @@ export function AuditoriaView({ logs }: { logs: AuditLog[] }) {
             </div>
           ) : filtrados.map((log) => {
             const s = MODULO_STYLE[log.modulo] ?? MODULO_STYLE['AUTH']
-            const actionIcon = ACCION_ICON[log.accion] ?? <Pencil size={14} />
+            const actionIcon = ACCION_ICON[log.accion] ?? <IconPencil size={14} />
 
             return (
               <div key={log.id} className="ar">

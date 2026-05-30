@@ -3,10 +3,10 @@
 import { useRef, useState } from 'react'
 import Link from 'next/link'
 import {
-  ArrowLeft, Upload, FileText, X,
-  CheckCircle2, AlertCircle, Loader2,
-  RefreshCw, Clock, Ban,
-} from 'lucide-react'
+  IconArrowLeft, IconUpload, IconFileText, IconX,
+  IconCircleCheck, IconAlertCircle, IconLoader2,
+  IconRefresh, IconClock, IconBan,
+} from '@tabler/icons-react'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -36,11 +36,11 @@ function uid() { return Math.random().toString(36).slice(2) }
 type EstadoCfg = { label: string; icon: React.ReactNode; bg: string; color: string }
 
 const ESTADO_CFG: Record<Estado, EstadoCfg> = {
-  pendiente:  { label: 'Pendiente',   icon: <Clock      size={12} />, bg: 'var(--amber-bg)', color: 'var(--amber)' },
-  subiendo:   { label: 'Procesando…', icon: <Loader2    size={12} className="spin" />, bg: 'var(--blue-bg)',  color: 'var(--blue)' },
-  exitoso:    { label: 'Registrado',  icon: <CheckCircle2 size={12} />, bg: 'var(--green-bg)', color: 'var(--green)' },
-  ya_existe:  { label: 'Ya existe',   icon: <Ban        size={12} />, bg: 'var(--bg2)',      color: 'var(--t2)' },
-  error:      { label: 'Error',       icon: <AlertCircle size={12} />, bg: 'var(--red-bg)',   color: 'var(--red)' },
+  pendiente:  { label: 'Pendiente',   icon: <IconClock      size={12} />, bg: 'var(--amber-bg)', color: 'var(--amber)' },
+  subiendo:   { label: 'Procesando…', icon: <IconLoader2    size={12} className="spin" />, bg: 'var(--blue-bg)',  color: 'var(--blue)' },
+  exitoso:    { label: 'Registrado',  icon: <IconCircleCheck size={12} />, bg: 'var(--green-bg)', color: 'var(--green)' },
+  ya_existe:  { label: 'Ya existe',   icon: <IconBan        size={12} />, bg: 'var(--bg2)',      color: 'var(--t2)' },
+  error:      { label: 'Error',       icon: <IconAlertCircle size={12} />, bg: 'var(--red-bg)',   color: 'var(--red)' },
 }
 
 // ─── Fila de archivo ──────────────────────────────────────────────────────────
@@ -59,7 +59,7 @@ function FilaArchivo({ archivo, onEliminar }: { archivo: ArchivoXML; onEliminar:
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             flexShrink: 0,
           }}>
-            <FileText size={14} style={{ color: 'var(--blue)' }} />
+            <IconFileText size={14} style={{ color: 'var(--blue)' }} />
           </div>
           <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: 13, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 280 }}>
@@ -91,7 +91,7 @@ function FilaArchivo({ archivo, onEliminar }: { archivo: ArchivoXML; onEliminar:
             onClick={() => onEliminar(archivo.uid)}
             title="Quitar"
           >
-            <X size={12} />
+            <IconX size={12} />
           </button>
         )}
       </td>
@@ -115,9 +115,9 @@ function Resumen({ archivos }: { archivos: ArchivoXML[] }) {
       background: 'var(--bg2)',
       fontSize: 12,
     }}>
-      {exitosos  > 0 && <span style={{ color: 'var(--green-t)', fontWeight: 500 }}><CheckCircle2 size={13} style={{ display: 'inline', marginRight: 4, verticalAlign: 'middle' }} />{exitosos} registrado{exitosos > 1 ? 's' : ''}</span>}
-      {yaExisten > 0 && <span style={{ color: 'var(--t2)',      fontWeight: 500 }}><Ban size={13} style={{ display: 'inline', marginRight: 4, verticalAlign: 'middle' }} />{yaExisten} ya existía{yaExisten > 1 ? 'n' : ''}</span>}
-      {errores   > 0 && <span style={{ color: 'var(--red)',     fontWeight: 500 }}><AlertCircle size={13} style={{ display: 'inline', marginRight: 4, verticalAlign: 'middle' }} />{errores} con error</span>}
+      {exitosos  > 0 && <span style={{ color: 'var(--green-t)', fontWeight: 500 }}><IconCircleCheck size={13} style={{ display: 'inline', marginRight: 4, verticalAlign: 'middle' }} />{exitosos} registrado{exitosos > 1 ? 's' : ''}</span>}
+      {yaExisten > 0 && <span style={{ color: 'var(--t2)',      fontWeight: 500 }}><IconBan size={13} style={{ display: 'inline', marginRight: 4, verticalAlign: 'middle' }} />{yaExisten} ya existía{yaExisten > 1 ? 'n' : ''}</span>}
+      {errores   > 0 && <span style={{ color: 'var(--red)',     fontWeight: 500 }}><IconAlertCircle size={13} style={{ display: 'inline', marginRight: 4, verticalAlign: 'middle' }} />{errores} con error</span>}
     </div>
   )
 }
@@ -198,7 +198,7 @@ export function SubirComprobantes() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <Link href="/comprobantes">
-            <button className="ib" title="Volver"><ArrowLeft size={15} /></button>
+            <button className="ib" title="Volver"><IconArrowLeft size={15} /></button>
           </Link>
           <div>
             <h1 style={{ fontSize: 15, fontWeight: 600, letterSpacing: '-0.2px' }}>Subir comprobantes</h1>
@@ -217,12 +217,12 @@ export function SubirComprobantes() {
             </span>
             {hayResultados && !procesando && (
               <button className="btn btn-sm" onClick={() => setArchivos([])}>
-                <RefreshCw size={12} /> Limpiar
+                <IconRefresh size={12} /> Limpiar
               </button>
             )}
             {hayResultados && !procesando && (
               <button className="btn btn-sm" onClick={() => inputRef.current?.click()}>
-                <Upload size={12} /> Agregar más
+                <IconUpload size={12} /> Agregar más
               </button>
             )}
             {pendientes.length > 0 && (
@@ -232,8 +232,8 @@ export function SubirComprobantes() {
                 disabled={procesando}
               >
                 {procesando
-                  ? <><Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} /> Procesando…</>
-                  : <><Upload size={12} /> Procesar {pendientes.length} archivo{pendientes.length > 1 ? 's' : ''}</>}
+                  ? <><IconLoader2 size={12} style={{ animation: 'spin 1s linear infinite' }} /> Procesando…</>
+                  : <><IconUpload size={12} /> Procesar {pendientes.length} archivo{pendientes.length > 1 ? 's' : ''}</>}
               </button>
             )}
           </div>
@@ -270,7 +270,7 @@ export function SubirComprobantes() {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               margin: '0 auto 14px',
             }}>
-              <Upload size={22} style={{ color: 'var(--blue)' }} />
+              <IconUpload size={22} style={{ color: 'var(--blue)' }} />
             </div>
             <p style={{ fontSize: 15, fontWeight: 500, marginBottom: 6 }}>
               Haz clic para seleccionar archivos XML
@@ -282,7 +282,7 @@ export function SubirComprobantes() {
               className="btn"
               onClick={(e) => { e.stopPropagation(); inputRef.current?.click() }}
             >
-              <Upload size={13} /> Seleccionar archivos XML
+              <IconUpload size={13} /> Seleccionar archivos XML
             </button>
           </div>
         </div>
@@ -323,7 +323,7 @@ export function SubirComprobantes() {
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 margin: '0 auto 10px',
               }}>
-                <Upload size={16} style={{ color: 'var(--blue)' }} />
+                <IconUpload size={16} style={{ color: 'var(--blue)' }} />
               </div>
               <p style={{ fontSize: 13, fontWeight: 500, marginBottom: 3 }}>
                 Seleccionar más XML

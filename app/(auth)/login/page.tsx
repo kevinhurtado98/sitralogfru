@@ -1,5 +1,5 @@
 import { LoginForm } from '@/components/auth/LoginForm'
-import { Truck, ShieldCheck, FileText, ClipboardList } from 'lucide-react'
+import { IconTruck, IconShieldCheck, IconFileText, IconClipboardList } from '@tabler/icons-react'
 
 export default function LoginPage() {
   return (
@@ -22,7 +22,7 @@ export default function LoginPage() {
             borderRadius: 10,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <Truck size={20} color="#fff" />
+            <IconTruck size={20} color="#fff" />
           </div>
           <div>
             <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', letterSpacing: '-0.3px' }}>
@@ -49,9 +49,9 @@ export default function LoginPage() {
           {/* Feature list */}
           <div style={{ marginTop: 36, display: 'flex', flexDirection: 'column', gap: 14 }}>
             {[
-              { icon: FileText,      label: 'Importación masiva de facturas XML SUNAT' },
-              { icon: ClipboardList, label: 'Gestión de requerimientos por área' },
-              { icon: ShieldCheck,   label: 'Trazabilidad completa con auditoría' },
+              { icon: IconFileText,      label: 'Importación masiva de facturas XML SUNAT' },
+              { icon: IconClipboardList, label: 'Gestión de requerimientos por área' },
+              { icon: IconShieldCheck,   label: 'Trazabilidad completa con auditoría' },
             ].map(({ icon: Icon, label }) => (
               <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
                 <div style={{

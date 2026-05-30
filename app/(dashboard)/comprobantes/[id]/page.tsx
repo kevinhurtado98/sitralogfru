@@ -14,19 +14,19 @@ export default async function FacturaDetallePage({ params }: Props) {
     include: {
       notasCredito: true,
       notasDebito:  true,
-      creadoPor:    { select: { nombre: true, email: true } },
+      creadoPor:    { select: { nombres: true, apellidos: true, email: true } },
     },
   })
 
   if (!raw) notFound()
 
-  // Serialize Decimal → number
   const factura = {
     ...raw,
     monto:       Number(raw.monto),
     retencion:   Number(raw.retencion),
     detraccion:  Number(raw.detraccion),
     montoNeto:   Number(raw.montoNeto),
+    creadoPor:   { nombre: `${raw.creadoPor.nombres} ${raw.creadoPor.apellidos}`.trim(), email: raw.creadoPor.email },
     notasCredito: raw.notasCredito.map((n) => ({ ...n, monto: Number(n.monto) })),
     notasDebito:  raw.notasDebito.map((n)  => ({ ...n, monto: Number(n.monto) })),
   }

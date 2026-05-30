@@ -9,14 +9,16 @@ datasource db {
 // ─── AUTH ────────────────────────────────────────────────────────────────────
 
 model User {
-  id        String   @id @default(cuid())
-  nombre    String
-  email     String   @unique
-  password  String
-  rol       Rol      @default(USUARIO)
-  activo    Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String   @id @default(cuid())
+  nombres        String
+  apellidos      String
+  email          String   @unique
+  password       String
+  rol            Rol      @default(ASISTENTE)
+  activo         Boolean  @default(true)
+  notificaciones Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   facturasCreadas           Factura[]       @relation("FacturaCreadaPor")
   requerimientosCrea        Requerimiento[] @relation("RequerimientoCreadoPor")
@@ -69,6 +71,37 @@ model VerificationToken {
 
   @@unique([identifier, token])
   @@map("verification_tokens")
+}
+
+// ─── CONFIGURACIÓN ───────────────────────────────────────────────────────────
+
+model Area {
+  id        String   @id @default(cuid())
+  nombre    String   @unique
+  color     String
+  tc        String
+  activo    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  responsables Responsable[]
+
+  @@map("areas")
+}
+
+model Responsable {
+  id        String   @id @default(cuid())
+  nombres   String
+  apellidos String
+  correo    String   @unique
+  areaId    String
+  activo    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  area Area @relation(fields: [areaId], references: [id])
+
+  @@map("responsables")
 }
 
 // ─── COMPROBANTES ────────────────────────────────────────────────────────────
@@ -184,7 +217,7 @@ model AuditLog {
 
 enum Rol {
   ADMIN
-  USUARIO
+  ASISTENTE
 }
 
 enum Moneda {

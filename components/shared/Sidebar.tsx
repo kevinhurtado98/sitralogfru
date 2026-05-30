@@ -1,29 +1,32 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { signOut } from 'next-auth/react'
 import {
-  LayoutDashboard,
-  FileText,
-  ClipboardList,
-  BarChart2,
-  ShieldCheck,
-  Settings,
-  LogOut,
-  Truck,
-} from 'lucide-react'
+  IconLayoutDashboard,
+  IconFileText,
+  IconClipboardList,
+  IconChartBar,
+  IconShieldCheck,
+  IconSettings,
+  IconLogout,
+  IconTruck,
+  IconKey,
+} from '@tabler/icons-react'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 
 const NAV = [
   { label: 'Principal', items: [
-    { href: '/indicadores',    label: 'Dashboard',       icon: LayoutDashboard },
+    { href: '/indicadores',    label: 'Dashboard',       icon: IconLayoutDashboard },
   ]},
   { label: 'Módulos', items: [
-    { href: '/comprobantes',   label: 'Comprobantes',    icon: FileText },
-    { href: '/requerimientos', label: 'Requerimientos',  icon: ClipboardList },
-    { href: '/indicadores',    label: 'Indicadores',     icon: BarChart2 },
-    { href: '/auditoria',      label: 'Auditorías',      icon: ShieldCheck },
-    { href: '/configuracion',  label: 'Configuración',   icon: Settings },
+    { href: '/comprobantes',   label: 'Comprobantes',    icon: IconFileText },
+    { href: '/requerimientos', label: 'Requerimientos',  icon: IconClipboardList },
+    { href: '/indicadores',    label: 'Indicadores',     icon: IconChartBar },
+    { href: '/auditoria',      label: 'Auditorías',      icon: IconShieldCheck },
+    { href: '/configuracion',  label: 'Configuración',   icon: IconSettings },
   ]},
 ]
 
@@ -33,6 +36,7 @@ interface SidebarProps {
 
 export function Sidebar({ user }: SidebarProps) {
   const pathname = usePathname()
+  const [logoutOpen, setLogoutOpen] = useState(false)
 
   return (
     <aside
@@ -55,7 +59,7 @@ export function Sidebar({ user }: SidebarProps) {
             marginBottom: 9,
           }}
         >
-          <Truck size={17} color="#fff" />
+          <IconTruck size={17} color="#fff" />
         </div>
         <div style={{ fontSize: 13, fontWeight: 600, letterSpacing: '-0.3px' }}>SITRALOGFRU</div>
         <div style={{ fontSize: 10, color: 'var(--t3)', marginTop: 2 }}>Sistema de Gestión Logística</div>
@@ -141,13 +145,27 @@ export function Sidebar({ user }: SidebarProps) {
               {user.email}
             </div>
           </div>
+          <Link href="/perfil" title="Cambiar contraseña" style={{ color: 'var(--t3)', display: 'flex', lineHeight: 1 }}>
+            <IconKey size={15} />
+          </Link>
           <button
-            onClick={() => signOut({ callbackUrl: '/login' })}
+            onClick={() => setLogoutOpen(true)}
             style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'var(--t3)' }}
             title="Cerrar sesión"
           >
-            <LogOut size={15} />
+            <IconLogout size={15} />
           </button>
+
+          <ConfirmDialog
+            open={logoutOpen}
+            onOpenChange={setLogoutOpen}
+            title="Cerrar sesión"
+            description="¿Estás seguro que deseas cerrar sesión? Tendrás que volver a ingresar tus credenciales para acceder al sistema."
+            confirmLabel="Cerrar sesión"
+            cancelLabel="Cancelar"
+            variant="danger"
+            onConfirm={() => signOut({ callbackUrl: '/login' })}
+          />
         </div>
       </div>
     </aside>

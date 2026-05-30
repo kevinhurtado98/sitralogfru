@@ -2,7 +2,7 @@
 
 import { useActionState } from 'react'
 import { login } from '@/lib/actions/auth'
-import { AlertCircle, Loader2 } from 'lucide-react'
+import { IconAlertCircle, IconLoader2 } from '@tabler/icons-react'
 
 export function LoginForm() {
   const [state, action, isPending] = useActionState(login, undefined)
@@ -55,7 +55,7 @@ export function LoginForm() {
           borderRadius: 'var(--rm)',
           fontSize: 13, color: 'var(--red-t)',
         }}>
-          <AlertCircle size={14} style={{ flexShrink: 0 }} />
+          <IconAlertCircle size={14} style={{ flexShrink: 0 }} />
           {state.message}
         </div>
       )}
@@ -85,7 +85,7 @@ export function LoginForm() {
         onMouseLeave={(e) => { if (!isPending) e.currentTarget.style.background = '#1a1a18' }}
       >
         {isPending ? (
-          <><Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> Ingresando…</>
+          <><IconLoader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> Ingresando…</>
         ) : (
           'Ingresar al sistema'
         )}

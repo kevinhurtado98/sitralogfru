@@ -12,9 +12,21 @@ const loginSchema = z.object({
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
-  session: { strategy: 'jwt' },
+  session: { strategy: 'jwt', maxAge: 8 * 60 * 60 }, // 8h máximo, pero la cookie expira al cerrar
   pages: {
     signIn: '/login',
+  },
+  cookies: {
+    sessionToken: {
+      name: 'next-auth.session-token',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax' as const,
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+        // Sin maxAge → cookie de sesión, desaparece al cerrar el browser
+      },
+    },
   },
   providers: [
     Credentials({
@@ -34,7 +46,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const passwordOk = await bcrypt.compare(parsed.data.password, user.password)
         if (!passwordOk) return null
 
-        return { id: user.id, email: user.email, name: user.nombre, role: user.rol }
+        return { id: user.id, email: user.email, name: `${user.nombres} ${user.apellidos}`.trim(), role: user.rol }
       },
     }),
   ],

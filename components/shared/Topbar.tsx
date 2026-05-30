@@ -1,7 +1,7 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
-import { Bell } from 'lucide-react'
+import { IconBell } from '@tabler/icons-react'
 
 const TITLES: Record<string, string> = {
   '/indicadores':    'Dashboard · Indicadores',
@@ -28,7 +28,7 @@ export function Topbar({ user, hasNotif = false }: TopbarProps) {
       </span>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <div style={{ position: 'relative' }}>
-          <Bell size={18} style={{ color: 'var(--t2)', cursor: 'pointer' }} />
+          <IconBell size={18} style={{ color: 'var(--t2)', cursor: 'pointer' }} />
           {hasNotif && (
             <span
               style={{

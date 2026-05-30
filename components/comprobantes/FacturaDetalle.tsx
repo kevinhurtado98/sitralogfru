@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { format } from 'date-fns'
-import { ArrowLeft, Save, CircleCheck, FileMinus2, FilePlus2 } from 'lucide-react'
+import { IconArrowLeft, IconDeviceFloppy, IconCircleCheck, IconFileMinus, IconFilePlus } from '@tabler/icons-react'
 import type { EstadoFactura, Moneda, TipoFactura, FormaPago } from '@prisma/client'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -80,7 +80,7 @@ export function FacturaDetalle({ factura: f }: { factura: FacturaFull }) {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 16 }}>
         <Link href="/comprobantes">
-          <button className="btn btn-sm"><ArrowLeft size={13} /> Volver</button>
+          <button className="btn btn-sm"><IconArrowLeft size={13} /> Volver</button>
         </Link>
         <span style={{ fontSize: 13, color: 'var(--t2)' }}>
           Factura <span style={{ fontFamily: 'var(--fm)' }}>{f.serie}-{f.numero}</span> · {f.proveedor}
@@ -185,8 +185,8 @@ export function FacturaDetalle({ factura: f }: { factura: FacturaFull }) {
       <div className="dc">
         <div className="ss">Documentos enlazados</div>
         <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap', marginBottom: 12 }}>
-          <button className="btn btn-sm"><FileMinus2 size={13} /> Nota de crédito</button>
-          <button className="btn btn-sm"><FilePlus2 size={13} /> Nota de débito</button>
+          <button className="btn btn-sm"><IconFileMinus size={13} /> Nota de crédito</button>
+          <button className="btn btn-sm"><IconFilePlus size={13} /> Nota de débito</button>
         </div>
 
         {f.notasCredito.length === 0 && f.notasDebito.length === 0 ? (
@@ -229,8 +229,8 @@ export function FacturaDetalle({ factura: f }: { factura: FacturaFull }) {
 
       {/* Acciones */}
       <div style={{ display: 'flex', gap: 9, justifyContent: 'flex-end', paddingBottom: 6 }}>
-        <button className="btn"><Save size={13} /> Guardar cambios</button>
-        <button className="btn btn-g"><CircleCheck size={13} /> Marcar como pagada</button>
+        <button className="btn"><IconDeviceFloppy size={13} /> Guardar cambios</button>
+        <button className="btn btn-g"><IconCircleCheck size={13} /> Marcar como pagada</button>
       </div>
     </div>
   )

@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { format } from 'date-fns'
-import { Search, Eye, Pencil, ArrowUpRight, Check, Bold, Italic, Underline, List, ListOrdered, Eraser } from 'lucide-react'
+import { IconSearch, IconEye, IconPencil, IconArrowUpRight, IconCheck, IconBold, IconItalic, IconUnderline, IconList, IconListNumbers, IconEraser } from '@tabler/icons-react'
 import { AREAS, type Area } from '@/lib/areas'
 import type { EstadoRequerimiento, Prioridad, TipoRequerimiento } from '@prisma/client'
 
@@ -146,7 +146,7 @@ function NuevoRequerimiento({ onGuardar, onCancelar }: {
                 <div style={{ fontSize: 13, fontWeight: 500 }}>{a.resp}</div>
                 <div style={{ fontSize: 11, color: 'var(--t3)' }}>{a.area}</div>
               </div>
-              <ArrowUpRight size={14} style={{ marginLeft: 'auto', color: 'var(--t3)' }} />
+              <IconArrowUpRight size={14} style={{ marginLeft: 'auto', color: 'var(--t3)' }} />
             </div>
           ))}
         </div>
@@ -197,9 +197,9 @@ function NuevoRequerimiento({ onGuardar, onCancelar }: {
             {/* Toolbar */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 10px', borderBottom: '1px solid var(--bl)', background: 'var(--bg2)' }}>
               {([
-                ['bold',      <Bold size={13} key="b" />],
-                ['italic',    <Italic size={13} key="i" />],
-                ['underline', <Underline size={13} key="u" />],
+                ['bold',      <IconBold size={13} key="b" />],
+                ['italic',    <IconItalic size={13} key="i" />],
+                ['underline', <IconUnderline size={13} key="u" />],
               ] as const).map(([cmd, icon]) => (
                 <button key={cmd}
                   onClick={() => fmtText(cmd as 'bold' | 'italic' | 'underline')}
@@ -207,10 +207,10 @@ function NuevoRequerimiento({ onGuardar, onCancelar }: {
                 >{icon}</button>
               ))}
               <div style={{ width: 1, height: 18, background: 'var(--bl)', margin: '0 3px' }} />
-              <button onClick={() => fmtText('bullet')} style={{ width: 26, height: 26, border: 'none', borderRadius: 'var(--r)', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--t2)' }}><List size={13} /></button>
-              <button onClick={() => fmtText('number')} style={{ width: 26, height: 26, border: 'none', borderRadius: 'var(--r)', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--t2)' }}><ListOrdered size={13} /></button>
+              <button onClick={() => fmtText('bullet')} style={{ width: 26, height: 26, border: 'none', borderRadius: 'var(--r)', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--t2)' }}><IconList size={13} /></button>
+              <button onClick={() => fmtText('number')} style={{ width: 26, height: 26, border: 'none', borderRadius: 'var(--r)', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--t2)' }}><IconListNumbers size={13} /></button>
               <div style={{ width: 1, height: 18, background: 'var(--bl)', margin: '0 3px' }} />
-              <button onClick={() => setDesc('')} style={{ width: 26, height: 26, border: 'none', borderRadius: 'var(--r)', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--t2)' }}><Eraser size={13} /></button>
+              <button onClick={() => setDesc('')} style={{ width: 26, height: 26, border: 'none', borderRadius: 'var(--r)', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--t2)' }}><IconEraser size={13} /></button>
               <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--t3)' }}>Escribe o pega el detalle aquí</span>
             </div>
             <textarea
@@ -234,7 +234,7 @@ function NuevoRequerimiento({ onGuardar, onCancelar }: {
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 9 }}>
           <button className="btn" onClick={onCancelar}>Cancelar</button>
-          <button className="btn btn-p" onClick={guardar}><Check size={13} /> Registrar requerimiento</button>
+          <button className="btn btn-p" onClick={guardar}><IconCheck size={13} /> Registrar requerimiento</button>
         </div>
       </div>
     </>
@@ -285,7 +285,7 @@ export function RequerimientosView({ requerimientos: initial }: { requerimientos
               <div className="fg" style={{ maxWidth: 140 }}><label>Estado</label>
                 <select><option>Todos</option><option>Pendiente</option><option>Atendido parcial</option><option>Atendido total</option></select>
               </div>
-              <button className="btn btn-p"><Search size={13} /> Filtrar</button>
+              <button className="btn btn-p"><IconSearch size={13} /> Filtrar</button>
             </div>
           </div>
 
@@ -326,8 +326,8 @@ export function RequerimientosView({ requerimientos: initial }: { requerimientos
                       <td>{estadoBadge(r.estado)}</td>
                       <td>
                         <div style={{ display: 'flex', gap: 4 }}>
-                          <button className="ib"><Eye size={13} /></button>
-                          <button className="ib"><Pencil size={13} /></button>
+                          <button className="ib"><IconEye size={13} /></button>
+                          <button className="ib"><IconPencil size={13} /></button>
                         </div>
                       </td>
                     </tr>

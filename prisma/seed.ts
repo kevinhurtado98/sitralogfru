@@ -19,7 +19,8 @@ async function main() {
     where: { email: 'admin@fruchincha.pe' },
     update: {},
     create: {
-      nombre: 'Administrador',
+      nombres: 'Administrador',
+      apellidos: '',
       email: 'admin@fruchincha.pe',
       password: hash,
       rol: 'ADMIN',

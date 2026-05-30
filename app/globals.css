@@ -320,6 +320,7 @@ body {
 .btn-b { background: var(--blue); border-color: var(--blue); color: #fff; }
 .btn-b:hover { background: var(--blue-t); }
 .btn-sm { height: 27px; padding: 0 10px; font-size: 12px; }
+.btn:disabled { opacity: 0.38; cursor: not-allowed; }
 
 /* ── AUDIT LIST ──────────────────────────────────────────────────────── */
 .ar {

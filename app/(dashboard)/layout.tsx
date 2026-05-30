@@ -2,6 +2,7 @@ import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { Sidebar } from '@/components/shared/Sidebar'
 import { Topbar } from '@/components/shared/Topbar'
+import { Toaster } from 'sonner'
 
 function getInitials(name: string): string {
   return name
@@ -28,6 +29,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <main style={{ flex: 1, overflowY: 'auto', padding: '18px 22px', background: 'var(--bg3)' }}>
           {children}
         </main>
+        <Toaster
+          position="bottom-right"
+          richColors
+          toastOptions={{ style: { fontFamily: 'var(--f)', fontSize: 13 } }}
+        />
       </div>
     </div>
   )

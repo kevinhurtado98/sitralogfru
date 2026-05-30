@@ -4,9 +4,9 @@ import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { format } from 'date-fns'
 import {
-  AlertTriangle, Search, Eye, Pencil, Trash2,
-  FileCode2, RotateCcw, CheckCheck, X, CircleCheck,
-} from 'lucide-react'
+  IconAlertTriangle, IconSearch, IconEye, IconPencil, IconTrash,
+  IconFileCode, IconRotate, IconChecks, IconX, IconCircleCheck,
+} from '@tabler/icons-react'
 import type { EstadoFactura, Moneda, FormaPago } from '@prisma/client'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -64,7 +64,7 @@ function ToggleContable({ factura, onToggle }: {
           onClick={(e) => { e.stopPropagation(); onToggle() }}
           style={{ width: 22, height: 22 }}
         >
-          <RotateCcw size={11} />
+          <IconRotate size={11} />
         </button>
       </div>
     )
@@ -137,7 +137,7 @@ export function ComprobantesView({ facturas: initial }: { facturas: FacturaRow[]
       {/* Alert vencidas */}
       {vencidas.length > 0 && (
         <div className="alert-warn">
-          <AlertTriangle size={16} style={{ color: 'var(--amber)', flexShrink: 0, marginTop: 1 }} />
+          <IconAlertTriangle size={16} style={{ color: 'var(--amber)', flexShrink: 0, marginTop: 1 }} />
           <span>
             <strong>{vencidas.length} factura{vencidas.length > 1 ? 's' : ''} vencida{vencidas.length > 1 ? 's' : ''}</strong>
             {' '}sin pago registrado. Notificación enviada.
@@ -188,7 +188,7 @@ export function ComprobantesView({ facturas: initial }: { facturas: FacturaRow[]
             </select>
           </div>
           <button className="btn btn-p">
-            <Search size={13} /> Filtrar
+            <IconSearch size={13} /> Filtrar
           </button>
         </div>
       </div>
@@ -221,7 +221,7 @@ export function ComprobantesView({ facturas: initial }: { facturas: FacturaRow[]
           display: 'flex', alignItems: 'center', gap: 12,
           fontSize: 13, color: 'var(--blue-t)',
         }}>
-          <CheckCheck size={16} />
+          <IconChecks size={16} />
           <span>
             {selected.length} factura{selected.length > 1 ? 's' : ''} seleccionada{selected.length > 1 ? 's' : ''}
           </span>
@@ -230,10 +230,10 @@ export function ComprobantesView({ facturas: initial }: { facturas: FacturaRow[]
             style={{ marginLeft: 'auto' }}
             onClick={registrarSeleccionadas}
           >
-            <CircleCheck size={12} /> Registrar contablemente
+            <IconCircleCheck size={12} /> Registrar contablemente
           </button>
           <button className="btn btn-sm" onClick={() => setSelected([])}>
-            <X size={12} />
+            <IconX size={12} />
           </button>
         </div>
       )}
@@ -248,7 +248,7 @@ export function ComprobantesView({ facturas: initial }: { facturas: FacturaRow[]
           <span style={{ fontSize: 13, fontWeight: 600 }}>Facturas registradas</span>
           <Link href="/comprobantes/nuevo">
             <button className="btn btn-sm">
-              <FileCode2 size={13} /> Importar XML
+              <IconFileCode size={13} /> Importar XML
             </button>
           </Link>
         </div>
@@ -338,14 +338,14 @@ export function ComprobantesView({ facturas: initial }: { facturas: FacturaRow[]
                     <div style={{ display: 'flex', gap: 4 }}>
                       <Link href={`/comprobantes/${f.id}`}>
                         <button className="ib" title="Ver detalle">
-                          <Eye size={13} />
+                          <IconEye size={13} />
                         </button>
                       </Link>
                       <button className="ib" title="Editar">
-                        <Pencil size={13} />
+                        <IconPencil size={13} />
                       </button>
                       <button className="ib ib-danger" title="Eliminar">
-                        <Trash2 size={13} />
+                        <IconTrash size={13} />
                       </button>
                     </div>
                   </td>
