@@ -1,21 +1,105 @@
 import { LoginForm } from '@/components/auth/LoginForm'
-import { Building2 } from 'lucide-react'
+import { Truck, ShieldCheck, FileText, ClipboardList } from 'lucide-react'
 
 export default function LoginPage() {
   return (
-    <div className="w-full max-w-md px-4">
-      <div className="text-center mb-8">
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mb-4">
-          <Building2 className="h-9 w-9 text-white" />
+    <>
+      {/* Panel izquierdo — branding oscuro */}
+      <div style={{
+        width: '44%',
+        background: '#1a1a18',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        padding: '48px 52px',
+        flexShrink: 0,
+      }}>
+        {/* Logo */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{
+            width: 40, height: 40,
+            background: 'var(--blue)',
+            borderRadius: 10,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Truck size={20} color="#fff" />
+          </div>
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', letterSpacing: '-0.3px' }}>
+              SITRALOGFRU
+            </div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 1 }}>
+              Fruchincha S.A.C.
+            </div>
+          </div>
         </div>
-        <h1 className="text-2xl font-bold text-white">SITRALOGFRU</h1>
-        <p className="text-slate-400 text-sm mt-1">Sistema de Gestión Logística – Fruchincha</p>
+
+        {/* Texto central */}
+        <div>
+          <h1 style={{
+            fontSize: 32, fontWeight: 700, color: '#fff',
+            letterSpacing: '-1px', lineHeight: 1.25, marginBottom: 16,
+          }}>
+            Sistema de Gestión<br />Logística y Contable
+          </h1>
+          <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.45)', lineHeight: 1.7, maxWidth: 380 }}>
+            Gestión de comprobantes, requerimientos y auditoría centralizada para las operaciones de Fruchincha.
+          </p>
+
+          {/* Feature list */}
+          <div style={{ marginTop: 36, display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {[
+              { icon: FileText,      label: 'Importación masiva de facturas XML SUNAT' },
+              { icon: ClipboardList, label: 'Gestión de requerimientos por área' },
+              { icon: ShieldCheck,   label: 'Trazabilidad completa con auditoría' },
+            ].map(({ icon: Icon, label }) => (
+              <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
+                <div style={{
+                  width: 30, height: 30, borderRadius: 8,
+                  background: 'rgba(255,255,255,0.07)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  flexShrink: 0,
+                }}>
+                  <Icon size={14} color="rgba(255,255,255,0.6)" />
+                </div>
+                <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)' }}>{label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)' }}>
+          © 2026 Fruchincha S.A.C. · Uso interno
+        </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-xl p-8">
-        <h2 className="text-lg font-semibold text-gray-900 mb-6">Iniciar sesión</h2>
-        <LoginForm />
+      {/* Panel derecho — formulario */}
+      <div style={{
+        flex: 1,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: '#f0ede8',
+        padding: '48px 52px',
+      }}>
+        <div style={{ width: '100%', maxWidth: 400 }}>
+          <div style={{ marginBottom: 32 }}>
+            <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--t1)', letterSpacing: '-0.4px', marginBottom: 6 }}>
+              Iniciar sesión
+            </h2>
+            <p style={{ fontSize: 13, color: 'var(--t3)' }}>
+              Ingresa tus credenciales para acceder al sistema
+            </p>
+          </div>
+
+          <LoginForm />
+
+          <p style={{ marginTop: 24, fontSize: 12, color: 'var(--t3)', textAlign: 'center' }}>
+            ¿Problemas para ingresar? Contacta al administrador del sistema.
+          </p>
+        </div>
       </div>
-    </div>
+    </>
   )
 }
