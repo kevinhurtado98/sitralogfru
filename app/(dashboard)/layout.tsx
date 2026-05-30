@@ -21,7 +21,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const initials = getInitials(name)
 
   return (
-    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', flex: 1, width: 0, minWidth: 0 }}>
       <Sidebar user={{ name, email, initials }} />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', minWidth: 0 }}>
         <Topbar user={{ name, initials }} hasNotif />
