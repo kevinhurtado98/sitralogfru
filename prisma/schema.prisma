@@ -20,11 +20,10 @@ model User {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  facturasCreadas           Factura[]       @relation("FacturaCreadaPor")
-  requerimientosCrea        Requerimiento[] @relation("RequerimientoCreadoPor")
-  requerimientosResponsable Requerimiento[] @relation("RequerimientoResponsable")
-  requerimientosAtiende     Requerimiento[] @relation("RequerimientoAtendidoPor")
-  auditLogs                 AuditLog[]
+  facturasCreadas       Factura[]       @relation("FacturaCreadaPor")
+  requerimientosCrea    Requerimiento[] @relation("RequerimientoCreadoPor")
+  requerimientosAtiende Requerimiento[] @relation("RequerimientoAtendidoPor")
+  auditLogs             AuditLog[]
 
   // NextAuth
   accounts Account[]
@@ -84,7 +83,8 @@ model Area {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  responsables Responsable[]
+  responsables   Responsable[]
+  requerimientos Requerimiento[]
 
   @@map("areas")
 }
@@ -99,7 +99,8 @@ model Responsable {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  area Area @relation(fields: [areaId], references: [id])
+  area           Area            @relation(fields: [areaId], references: [id])
+  requerimientos Requerimiento[]
 
   @@map("responsables")
 }
@@ -174,24 +175,25 @@ model NotaDebito {
 // ─── REQUERIMIENTOS ──────────────────────────────────────────────────────────
 
 model Requerimiento {
-  id             String              @id @default(cuid())
-  fechaSolicitud DateTime
-  area           String
-  prioridad      Prioridad
-  tipo           TipoRequerimiento
-  descripcion    String              @db.VarChar(1000)
-  estado         EstadoRequerimiento @default(PENDIENTE)
-  diasRetraso    Int                 @default(0)
-  responsableId  String
-  creadoPorId    String
-  atendidoPorId  String?
-  createdAt      DateTime            @default(now())
-  updatedAt      DateTime            @updatedAt
+  id                    String              @id @default(cuid())
+  fechaSolicitud        DateTime
+  areaId                String
+  responsableId         String
+  prioridad             Prioridad
+  tipo                  TipoRequerimiento
+  descripcion           String              @db.VarChar(1000)
+  estado                EstadoRequerimiento @default(PENDIENTE)
+  diasRetraso           Int                 @default(0)
+  fechaEstimadaAtencion DateTime?
+  creadoPorId           String
+  atendidoPorId         String?
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
 
-  responsable User  @relation("RequerimientoResponsable", fields: [responsableId], references: [id])
-  creadoPor   User  @relation("RequerimientoCreadoPor", fields: [creadoPorId], references: [id])
-  atendidoPor User? @relation("RequerimientoAtendidoPor", fields: [atendidoPorId], references: [id])
-
+  area        Area        @relation(fields: [areaId], references: [id])
+  responsable Responsable @relation(fields: [responsableId], references: [id])
+  creadoPor   User        @relation("RequerimientoCreadoPor", fields: [creadoPorId], references: [id])
+  atendidoPor User?       @relation("RequerimientoAtendidoPor", fields: [atendidoPorId], references: [id])
 
   @@map("requerimientos")
 }
@@ -260,6 +262,7 @@ enum EstadoRequerimiento {
   ATENDIDO_PARCIAL
   PENDIENTE
   NO_ATENDIDO
+  GESTION_REALIZADA
 }
 
 enum Modulo {
@@ -267,4 +270,5 @@ enum Modulo {
   REQUERIMIENTOS
   USUARIOS
   AUTH
+  CONFIGURACION
 }

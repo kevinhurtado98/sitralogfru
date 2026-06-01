@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { format } from 'date-fns'
-import { IconCircleCheck, IconUpload, IconPencil, IconPlus, IconTrash, IconMail, IconSearch } from '@tabler/icons-react'
+import { IconCircleCheck, IconUpload, IconPencil, IconPlus, IconTrash, IconMail, IconSearch, IconSettings, IconCheck, IconBan } from '@tabler/icons-react'
 import type { Modulo } from '@prisma/client'
 
 interface AuditLog {
@@ -17,15 +17,20 @@ const MODULO_STYLE: Record<string, { bg: string; color: string; icon: React.Reac
   REQUERIMIENTOS: { bg: 'var(--ora-bg)',   color: 'var(--ora)',   icon: <IconPencil size={14} />,       badgeCls: 'badge-ora',   label: 'Requerimientos' },
   USUARIOS:       { bg: 'var(--bg2)',      color: 'var(--t2)',    icon: <IconPlus size={14} />,         badgeCls: 'badge-slate', label: 'Usuarios' },
   AUTH:           { bg: 'var(--green-bg)', color: 'var(--green)', icon: <IconCircleCheck size={14} />,  badgeCls: 'badge-green', label: 'Auth' },
+  CONFIGURACION:  { bg: 'var(--amber-bg)', color: 'var(--amber)', icon: <IconSettings size={14} />,     badgeCls: 'badge-amber', label: 'Configuración' },
 }
 
 const ACCION_ICON: Record<string, React.ReactNode> = {
-  IMPORTAR_XML:    <IconUpload size={14} />,
-  CREAR:           <IconPlus size={14} />,
-  EDITAR:          <IconPencil size={14} />,
-  ELIMINAR:        <IconTrash size={14} />,
-  NOTIFICACION:    <IconMail size={14} />,
+  IMPORTAR_XML:      <IconUpload size={14} />,
+  CREAR:             <IconPlus size={14} />,
+  EDITAR:            <IconPencil size={14} />,
+  ELIMINAR:          <IconTrash size={14} />,
+  NOTIFICACION:      <IconMail size={14} />,
   REGISTRO_CONTABLE: <IconCircleCheck size={14} />,
+  CREAR_AREA:        <IconPlus size={14} />,
+  EDITAR_AREA:       <IconPencil size={14} />,
+  ACTIVAR_AREA:      <IconCheck size={14} />,
+  DESACTIVAR_AREA:   <IconBan size={14} />,
 }
 
 export function AuditoriaView({ logs }: { logs: AuditLog[] }) {
@@ -52,6 +57,7 @@ export function AuditoriaView({ logs }: { logs: AuditLog[] }) {
               <option value="">Todos</option>
               <option value="COMPROBANTES">Comprobantes</option>
               <option value="REQUERIMIENTOS">Requerimientos</option>
+              <option value="CONFIGURACION">Configuración</option>
               <option value="AUTH">Auth</option>
             </select>
           </div>

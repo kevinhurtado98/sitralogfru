@@ -8,10 +8,12 @@ interface Props {
 
 export default async function RequerimientoDetallePage({ params }: Props) {
   const { id } = await params
+
   const raw = await prisma.requerimiento.findUnique({
     where: { id },
     include: {
-      responsable: { select: { nombres: true, apellidos: true, email: true } },
+      area:        { select: { nombre: true } },
+      responsable: { select: { nombres: true, apellidos: true, correo: true } },
       creadoPor:   { select: { nombres: true, apellidos: true } },
       atendidoPor: { select: { nombres: true, apellidos: true } },
     },
@@ -20,7 +22,11 @@ export default async function RequerimientoDetallePage({ params }: Props) {
 
   const req = {
     ...raw,
-    responsable: { nombre: `${raw.responsable.nombres} ${raw.responsable.apellidos}`.trim(), email: raw.responsable.email },
+    area:        raw.area.nombre,
+    responsable: {
+      nombre: `${raw.responsable.nombres} ${raw.responsable.apellidos}`.trim(),
+      correo: raw.responsable.correo,
+    },
     creadoPor:   { nombre: `${raw.creadoPor.nombres} ${raw.creadoPor.apellidos}`.trim() },
     atendidoPor: raw.atendidoPor
       ? { nombre: `${raw.atendidoPor.nombres} ${raw.atendidoPor.apellidos}`.trim() }
