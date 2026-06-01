@@ -14,7 +14,8 @@ FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-# prisma generate + next build (outputFileTracingIncludes incluye el cliente Prisma del store pnpm)
+# URL dummy para que PrismaClient pueda instanciarse durante el build de Next.js
+ENV DB_HOST=build-placeholder
 RUN pnpm run build
 
 # ─── Etapa 3: imagen final mínima ────────────────────────────────────────────
