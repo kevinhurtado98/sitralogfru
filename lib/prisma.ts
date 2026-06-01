@@ -9,7 +9,7 @@ function buildUrl(): string | null {
 function createPrismaClient() {
   const url = buildUrl()
   return url
-    ? new PrismaClient({ datasources: { db: { url } } })
+    ? new PrismaClient({ datasourceUrl: url })
     : new PrismaClient()
 }
 
