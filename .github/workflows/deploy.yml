@@ -67,6 +67,7 @@ jobs:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           DB_NAME:     sitralogfru
         run: |
+          pnpm db:generate
           pnpm db:push
           pnpm db:seed
 
