@@ -117,13 +117,13 @@ export async function POST(request: NextRequest): Promise<NextResponse<Respuesta
         modulo: 'COMPROBANTES',
         accion: 'IMPORTAR_XML',
         entidadId: factura.id,
-        datosNuevos: {
+        datosNuevos: JSON.stringify({
           serie: datos.serie,
           numero: datos.numero,
           proveedor: datos.proveedor,
           monto: datos.monto,
           archivo: archivo.name,
-        },
+        }),
       },
     })
 
