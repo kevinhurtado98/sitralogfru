@@ -3,10 +3,8 @@
 import { useState, useMemo } from 'react'
 import { format } from 'date-fns'
 import { IconCircleCheck, IconUpload, IconPencil, IconPlus, IconTrash, IconMail, IconSearch, IconSettings, IconCheck, IconBan } from '@tabler/icons-react'
-import type { Modulo } from '@/lib/types'
-
 interface AuditLog {
-  id: string; modulo: Modulo; accion: string; entidadId: string
+  id: string; modulo: string; accion: string; entidadId: string
   datosAnteriores: unknown; datosNuevos: unknown
   createdAt: Date | string
   user: { nombre: string; email: string }

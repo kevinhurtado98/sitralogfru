@@ -1,16 +1,8 @@
 import 'dotenv/config'
 import { PrismaClient } from '@prisma/client'
-import { PrismaMariaDb } from '@prisma/adapter-mariadb'
 import bcrypt from 'bcryptjs'
 
-const adapter = new PrismaMariaDb({
-  host: process.env.DB_HOST ?? 'localhost',
-  port: Number(process.env.DB_PORT ?? 3306),
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-})
-const prisma = new PrismaClient({ adapter })
+const prisma = new PrismaClient()
 
 const AREAS_DATA = [
   { nombre: 'Certificaciones', color: '#E1F5EE', tc: '#0F6E56', responsables: [{ nombres: 'Yannina', apellidos: 'Levano',  correo: 'ylevano@fruchincha.com.pe'  }] },
