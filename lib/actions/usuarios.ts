@@ -4,14 +4,13 @@ import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import bcrypt from 'bcryptjs'
-import type { Rol } from '@/lib/types'
 import { sendWelcomeEmail } from '@/lib/email'
 
 const DEFAULT_PASSWORD = '12345678'
 
 type UsuarioData = {
   id: string; nombres: string; apellidos: string; email: string
-  rol: Rol; activo: boolean; notificaciones: boolean
+  rol: string; activo: boolean; notificaciones: boolean
 }
 type Ok = { ok: true; usuario: UsuarioData }
 type Err = { ok: false; error: string }
