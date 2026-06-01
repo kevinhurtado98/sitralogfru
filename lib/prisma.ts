@@ -1,16 +1,19 @@
 import { PrismaClient } from '@prisma/client'
-
-function buildUrl(): string | null {
-  const { DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME } = process.env
-  if (!DB_HOST) return null
-  return `sqlserver://${DB_HOST}:${DB_PORT ?? 1433};database=${DB_NAME};user=${DB_USER};password=${DB_PASSWORD};encrypt=false;trustServerCertificate=true`
-}
+import { PrismaMssql } from '@prisma/adapter-mssql'
 
 function createPrismaClient() {
-  const url = buildUrl()
-  return url
-    ? new PrismaClient({ datasourceUrl: url })
-    : new PrismaClient()
+  const adapter = new PrismaMssql({
+    server:   process.env.DB_HOST ?? 'localhost',
+    port:     Number(process.env.DB_PORT ?? 1433),
+    user:     process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    options: {
+      encrypt:                false,
+      trustServerCertificate: true,
+    },
+  })
+  return new PrismaClient({ adapter })
 }
 
 const globalForPrisma = globalThis as unknown as {
