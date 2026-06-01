@@ -8,18 +8,32 @@ datasource db {
 
 // ─── AUTH ────────────────────────────────────────────────────────────────────
 
+model Rol {
+  id          Int      @id @default(autoincrement())
+  nombre      String   @unique @db.NVarChar(50)
+  descripcion String?  @db.NVarChar(200)
+  activo      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  usuarios User[]
+
+  @@map("Roles")
+}
+
 model User {
   id             Int      @id @default(autoincrement())
   nombres        String   @db.NVarChar(100)
   apellidos      String   @db.NVarChar(100)
   email          String   @unique @db.NVarChar(200)
   password       String   @db.NVarChar(200)
-  rol            String   @default("ASISTENTE") @db.NVarChar(20)
+  rolId          Int
   activo         Boolean  @default(true)
   notificaciones Boolean  @default(false)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
+  rol                   Rol             @relation(fields: [rolId], references: [id], onUpdate: NoAction, onDelete: NoAction)
   facturasCreadas       Factura[]       @relation("FacturaCreadaPor")
   requerimientosCrea    Requerimiento[] @relation("RequerimientoCreadoPor")
   requerimientosAtiende Requerimiento[] @relation("RequerimientoAtendidoPor")
@@ -168,6 +182,6 @@ model AuditLog {
 
   user User @relation(fields: [userId], references: [id], onUpdate: NoAction, onDelete: NoAction)
 
-  @@map("LogsAuditoria")
+  @@map("Auditoria")
 }
 

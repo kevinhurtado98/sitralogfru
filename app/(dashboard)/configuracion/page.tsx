@@ -4,7 +4,11 @@ import { ConfiguracionView } from '@/components/configuracion/ConfiguracionView'
 export default async function ConfiguracionPage() {
   const [usuarios, responsables] = await Promise.all([
     prisma.user.findMany({
-      select: { id: true, nombres: true, apellidos: true, email: true, rol: true, activo: true, notificaciones: true },
+      select: {
+        id: true, nombres: true, apellidos: true, email: true,
+        activo: true, notificaciones: true,
+        rol: { select: { nombre: true } },
+      },
       orderBy: { createdAt: 'asc' },
     }),
     prisma.responsable.findMany({
@@ -21,7 +25,7 @@ export default async function ConfiguracionPage() {
     <ConfiguracionView
       usuarios={usuarios.map(u => ({
         id: u.id, nombres: u.nombres, apellidos: u.apellidos,
-        email: u.email, rol: u.rol, activo: u.activo, notificaciones: u.notificaciones,
+        email: u.email, rol: u.rol.nombre, activo: u.activo, notificaciones: u.notificaciones,
       }))}
       responsables={responsables.map(r => ({
         id: r.id, nombres: r.nombres, apellidos: r.apellidos, correo: r.correo,

@@ -14,6 +14,20 @@ const adapter = new PrismaMssql({
 const prisma = new PrismaClient({ adapter })
 
 async function main() {
+  // ─── Roles ───────────────────────────────────────────────────────────────
+  const rolAdmin = await prisma.rol.upsert({
+    where:  { nombre: 'ADMIN' },
+    update: {},
+    create: { nombre: 'ADMIN', descripcion: 'Acceso total al sistema' },
+  })
+
+  await prisma.rol.upsert({
+    where:  { nombre: 'ASISTENTE' },
+    update: {},
+    create: { nombre: 'ASISTENTE', descripcion: 'Acceso estándar al sistema' },
+  })
+
+  // ─── Usuario admin ───────────────────────────────────────────────────────
   const hash = await bcrypt.hash('admin123', 12)
 
   await prisma.user.upsert({
@@ -24,11 +38,11 @@ async function main() {
       apellidos: '',
       email:     'admin@fruchincha.pe',
       password:  hash,
-      rol:       'ADMIN',
+      rolId:     rolAdmin.id,
     },
   })
 
-  console.log('Seed completado: admin@fruchincha.pe / admin123')
+  console.log('Seed completado: roles + admin@fruchincha.pe / admin123')
 }
 
 main()

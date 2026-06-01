@@ -22,6 +22,21 @@ const schema = z.object({
   rol:       z.enum(['ADMIN', 'ASISTENTE']),
 })
 
+const userSelect = {
+  id: true, nombres: true, apellidos: true, email: true,
+  activo: true, notificaciones: true,
+  rol: { select: { nombre: true } },
+} as const
+
+function mapUsuario(u: { id: number; nombres: string; apellidos: string; email: string; activo: boolean; notificaciones: boolean; rol: { nombre: string } }): UsuarioData {
+  return { id: u.id, nombres: u.nombres, apellidos: u.apellidos, email: u.email, activo: u.activo, notificaciones: u.notificaciones, rol: u.rol.nombre }
+}
+
+async function getRolId(nombre: string): Promise<number | null> {
+  const rol = await prisma.rol.findUnique({ where: { nombre }, select: { id: true } })
+  return rol?.id ?? null
+}
+
 type CrearResult = Ok & { emailEnviado?: boolean; emailError?: string }
 
 export async function crearUsuario(data: {
@@ -31,11 +46,14 @@ export async function crearUsuario(data: {
   const parsed = schema.safeParse(rest)
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }
 
+  const rolId = await getRolId(parsed.data.rol)
+  if (!rolId) return { ok: false, error: 'Rol no válido' }
+
   try {
     const password = await bcrypt.hash(DEFAULT_PASSWORD, 10)
     const u = await prisma.user.create({
-      data: { ...parsed.data, password },
-      select: { id: true, nombres: true, apellidos: true, email: true, rol: true, activo: true, notificaciones: true },
+      data: { nombres: parsed.data.nombres, apellidos: parsed.data.apellidos, email: parsed.data.email, password, rolId },
+      select: userSelect,
     })
     revalidatePath('/configuracion')
 
@@ -44,10 +62,10 @@ export async function crearUsuario(data: {
         nombres: u.nombres, apellidos: u.apellidos,
         correo: u.email, contrasena: DEFAULT_PASSWORD,
       })
-      return { ok: true, usuario: u, emailEnviado: emailResult.ok, emailError: emailResult.ok ? undefined : emailResult.error }
+      return { ok: true, usuario: mapUsuario(u), emailEnviado: emailResult.ok, emailError: emailResult.ok ? undefined : emailResult.error }
     }
 
-    return { ok: true, usuario: u }
+    return { ok: true, usuario: mapUsuario(u) }
   } catch (e: unknown) {
     if ((e as { code?: string })?.code === 'P2002') return { ok: false, error: 'Ya existe un usuario con ese correo' }
     return { ok: false, error: 'Error al crear el usuario' }
@@ -60,14 +78,17 @@ export async function editarUsuario(id: number, data: {
   const parsed = schema.safeParse(data)
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }
 
+  const rolId = await getRolId(parsed.data.rol)
+  if (!rolId) return { ok: false, error: 'Rol no válido' }
+
   try {
     const u = await prisma.user.update({
       where: { id },
-      data: parsed.data,
-      select: { id: true, nombres: true, apellidos: true, email: true, rol: true, activo: true, notificaciones: true },
+      data:  { nombres: parsed.data.nombres, apellidos: parsed.data.apellidos, email: parsed.data.email, rolId },
+      select: userSelect,
     })
     revalidatePath('/configuracion')
-    return { ok: true, usuario: u }
+    return { ok: true, usuario: mapUsuario(u) }
   } catch (e: unknown) {
     if ((e as { code?: string })?.code === 'P2002') return { ok: false, error: 'Ya existe un usuario con ese correo' }
     return { ok: false, error: 'Error al editar el usuario' }
