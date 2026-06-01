@@ -47,7 +47,19 @@ jobs:
           push: true
           tags: ${{ env.IMAGE }}:latest
 
-      - name: Resetear base de datos y migrar schema
+      - name: Parar app y resetear base de datos
+        uses: appleboy/ssh-action@v1
+        with:
+          host:     ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key:      ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            docker stop sitralogfru || true
+            docker exec sqlserver /opt/mssql-tools18/bin/sqlcmd \
+              -S localhost -U SA -P '${{ secrets.DB_PASSWORD }}' -C \
+              -Q "USE master; ALTER DATABASE sitralogfru SET SINGLE_USER WITH ROLLBACK IMMEDIATE; DROP DATABASE sitralogfru; CREATE DATABASE sitralogfru"
+
+      - name: Aplicar schema y seed
         env:
           DB_HOST:     ${{ secrets.DB_HOST }}
           DB_PORT:     1433
@@ -55,19 +67,7 @@ jobs:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           DB_NAME:     sitralogfru
         run: |
-          # Recrear la BD limpia via SSH
-          ssh -o StrictHostKeyChecking=no \
-              -i <(echo "${{ secrets.VPS_SSH_KEY }}") \
-              ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
-              "docker stop sitralogfru || true && \
-               docker exec sqlserver /opt/mssql-tools18/bin/sqlcmd \
-                 -S localhost -U SA -P '${{ secrets.DB_PASSWORD }}' -C \
-                 -Q \"USE master; ALTER DATABASE sitralogfru SET SINGLE_USER WITH ROLLBACK IMMEDIATE; DROP DATABASE sitralogfru; CREATE DATABASE sitralogfru\""
-
-          # Aplicar schema
           pnpm db:push
-
-          # Seed datos iniciales
           pnpm db:seed
 
       - name: Desplegar en VPS
@@ -78,9 +78,7 @@ jobs:
           key:      ${{ secrets.VPS_SSH_KEY }}
           script: |
             docker pull ${{ env.IMAGE }}:latest
-
             docker rm sitralogfru || true
-
             docker run -d \
               --name sitralogfru \
               --restart unless-stopped \
