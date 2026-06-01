@@ -7,7 +7,7 @@ import { crearUsuario, editarUsuario, toggleUsuarioActivo, resetPassword } from 
 type Rol = 'ADMIN' | 'ASISTENTE'
 
 export type UsuarioRow = {
-  id: string; nombres: string; apellidos: string; email: string
+  id: number; nombres: string; apellidos: string; email: string
   rol: string; activo: boolean; notificaciones: boolean
 }
 
@@ -70,7 +70,7 @@ export function UsuariosModal({ usuarios: inicial, onClose }: { usuarios: Usuari
     })
   }
 
-  function handleToggle(id: string, activo: boolean) {
+  function handleToggle(id: number, activo: boolean) {
     startTransition(async () => {
       const res = await toggleUsuarioActivo(id, activo)
       if (!res.ok) return

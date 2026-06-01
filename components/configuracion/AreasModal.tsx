@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react'
 import { IconX, IconPencil, IconCheck, IconPlus, IconRotate, IconBan } from '@tabler/icons-react'
 import { crearArea, editarArea, toggleArea } from '@/lib/actions/areas'
 
-type Area = { id: string; nombre: string; color: string; tc: string; activo: boolean }
+type Area = { id: number; nombre: string; color: string; tc: string; activo: boolean }
 
 const PALETA = [
   { color: '#E1F5EE', tc: '#0F6E56' },
@@ -55,7 +55,7 @@ function ColorPicker({ value, onChange }: { value: string; onChange: (color: str
 export function AreasModal({ areas: inicial, onClose }: { areas: Area[]; onClose: () => void }) {
   const [areas, setAreas]           = useState<Area[]>(inicial)
   const [tab, setTab]               = useState<'activas' | 'inactivas'>('activas')
-  const [editId, setEditId]         = useState<string | null>(null)
+  const [editId, setEditId]         = useState<number | null>(null)
   const [editNombre, setEditNombre] = useState('')
   const [editColor, setEditColor]   = useState(PALETA[0].color)
   const [editTc, setEditTc]         = useState(PALETA[0].tc)
@@ -88,7 +88,7 @@ export function AreasModal({ areas: inicial, onClose }: { areas: Area[]; onClose
     })
   }
 
-  function handleToggle(id: string, activo: boolean) {
+  function handleToggle(id: number, activo: boolean) {
     setError('')
     startTransition(async () => {
       const res = await toggleArea(id, activo)

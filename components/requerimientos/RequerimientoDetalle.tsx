@@ -3,7 +3,7 @@
 import { format } from 'date-fns'
 import { IconArrowLeft } from '@tabler/icons-react'
 interface RequerimientoCompleto {
-  id:                    string
+  id:                    number
   fechaSolicitud:        Date
   area:                  string
   prioridad:             string

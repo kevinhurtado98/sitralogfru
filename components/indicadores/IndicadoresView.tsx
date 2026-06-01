@@ -5,11 +5,11 @@ import { getMonth, getYear } from 'date-fns'
 const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
 
 interface FacturaKpi {
-  id: string; estado: string; formaPago: string | null
+  id: number; estado: string; formaPago: string | null
   registradoContable: boolean; fechaEmision: Date | string
 }
 interface ReqKpi {
-  id: string; estado: string; prioridad: string
+  id: number; estado: string; prioridad: string
   diasRetraso: number; createdAt: Date | string
 }
 

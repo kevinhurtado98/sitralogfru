@@ -1,9 +1,10 @@
 import { prisma } from '@/lib/prisma'
 import { NuevoRequerimientoView } from '@/components/requerimientos/NuevoRequerimientoView'
 import type { TarjetaRapida } from '@/components/requerimientos/NuevoRequerimientoView'
+import type { AreaConResponsables } from '@/components/requerimientos/RequerimientosView'
 
 export default async function NuevoRequerimientoPage() {
-  const [areas, usoReciente] = await Promise.all([
+  const [areasRaw, usoReciente] = await Promise.all([
     prisma.area.findMany({
       where:   { activo: true },
       orderBy: { nombre: 'asc' },
@@ -15,7 +16,6 @@ export default async function NuevoRequerimientoPage() {
         },
       },
     }),
-    // Últimos 20 responsables distintos usados en requerimientos, por fecha desc
     prisma.requerimiento.groupBy({
       by:      ['responsableId'],
       orderBy: { _max: { createdAt: 'desc' } },
@@ -23,6 +23,14 @@ export default async function NuevoRequerimientoPage() {
       _max:    { createdAt: true },
     }),
   ])
+
+  const areas: AreaConResponsables[] = areasRaw.map((a) => ({
+    id:           a.id,
+    nombre:       a.nombre,
+    color:        a.color,
+    tc:           a.tc,
+    responsables: a.responsables.map(r => ({ id: r.id, nombres: r.nombres, apellidos: r.apellidos, correo: r.correo })),
+  }))
 
   let tarjetasRapidas: TarjetaRapida[]
 
@@ -34,7 +42,6 @@ export default async function NuevoRequerimientoPage() {
       include: { area: { select: { id: true, nombre: true, color: true, tc: true } } },
     })
 
-    // Reordenar para mantener el orden más-reciente-primero del groupBy
     const orden = new Map(ids.map((id, i) => [id, i]))
     tarjetasRapidas = responsables
       .sort((a, b) => (orden.get(a.id) ?? 99) - (orden.get(b.id) ?? 99))
@@ -43,7 +50,6 @@ export default async function NuevoRequerimientoPage() {
         area: r.area,
       }))
   } else {
-    // Sin requerimientos aún → primeros 20 ordenados por nombre
     const responsables = await prisma.responsable.findMany({
       where:   { activo: true },
       orderBy: { nombres: 'asc' },

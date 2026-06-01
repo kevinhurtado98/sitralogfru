@@ -10,22 +10,20 @@ type Err = { ok: false; error: string }
 
 const crearSchema = z.object({
   fechaSolicitud:        z.string().min(1),
-  areaId:                z.string().cuid(),
-  responsableId:         z.string().cuid(),
+  areaId:                z.number().int(),
+  responsableId:         z.number().int(),
   prioridad:             z.enum(['ALTA', 'MEDIA']),
   tipo:                  z.enum(['COMPRA', 'SERVICIO']),
   descripcion:           z.string().min(1).max(1000),
   fechaEstimadaAtencion: z.string().optional(),
 })
 
-async function getSessionUserId(): Promise<string | null> {
+async function getSessionUserId(): Promise<number | null> {
   const session = await auth()
-  if (session?.user?.id) return session.user.id
+  const rawId = session?.user?.id ?? null
+  if (rawId) return Number(rawId)
   if (session?.user?.email) {
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-      select: { id: true },
-    })
+    const user = await prisma.user.findUnique({ where: { email: session.user.email }, select: { id: true } })
     return user?.id ?? null
   }
   return null
@@ -33,13 +31,13 @@ async function getSessionUserId(): Promise<string | null> {
 
 export async function crearRequerimiento(data: {
   fechaSolicitud:        string
-  areaId:                string
-  responsableId:         string
+  areaId:                number
+  responsableId:         number
   prioridad:             'ALTA' | 'MEDIA'
   tipo:                  'COMPRA' | 'SERVICIO'
   descripcion:           string
   fechaEstimadaAtencion?: string
-}): Promise<{ ok: true; id: string } | Err> {
+}): Promise<{ ok: true; id: number } | Err> {
   const parsed = crearSchema.safeParse(data)
   if (!parsed.success) {
     const msg = parsed.error.issues[0]?.message ?? 'Datos inválidos'
@@ -70,7 +68,7 @@ export async function crearRequerimiento(data: {
         userId:    creadoPorId,
         modulo:    'REQUERIMIENTOS',
         accion:    'CREAR_REQUERIMIENTO',
-        entidadId: req.id,
+        entidadId: String(req.id),
         datosNuevos: JSON.stringify({
           areaId: req.areaId, responsableId: req.responsableId,
           prioridad: req.prioridad, tipo: req.tipo,
@@ -87,17 +85,14 @@ export async function crearRequerimiento(data: {
 }
 
 export async function cambiarEstadoRequerimiento(
-  id: string,
+  id: number,
   estado: EstadoRequerimiento,
 ): Promise<{ ok: true } | Err> {
   const userId = await getSessionUserId()
   if (!userId) return { ok: false, error: 'No autenticado' }
 
   try {
-    const anterior = await prisma.requerimiento.findUnique({
-      where: { id },
-      select: { estado: true },
-    })
+    const anterior = await prisma.requerimiento.findUnique({ where: { id }, select: { estado: true } })
 
     await prisma.requerimiento.update({
       where: { id },
@@ -112,9 +107,9 @@ export async function cambiarEstadoRequerimiento(
     await prisma.auditLog.create({
       data: {
         userId,
-        modulo:    'REQUERIMIENTOS',
-        accion:    'CAMBIAR_ESTADO',
-        entidadId: id,
+        modulo:          'REQUERIMIENTOS',
+        accion:          'CAMBIAR_ESTADO',
+        entidadId:       String(id),
         datosAnteriores: JSON.stringify({ estado: anterior?.estado }),
         datosNuevos:     JSON.stringify({ estado }),
       },

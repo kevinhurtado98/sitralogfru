@@ -8,15 +8,15 @@ import type { EstadoRequerimiento, Prioridad, TipoRequerimiento } from '@/lib/ty
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 export interface AreaConResponsables {
-  id:     string
+  id:     number
   nombre: string
   color:  string
   tc:     string
-  responsables: { id: string; nombres: string; apellidos: string; correo: string }[]
+  responsables: { id: number; nombres: string; apellidos: string; correo: string }[]
 }
 
 export interface ReqRow {
-  id:             string
+  id:             number
   fechaSolicitud: Date | string
   area:           string
   prioridad:      string

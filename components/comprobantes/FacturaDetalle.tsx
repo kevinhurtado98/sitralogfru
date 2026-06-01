@@ -9,12 +9,12 @@ import type { TipoFactura, FormaPago } from '@/lib/types'
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 interface NotaDoc {
-  id: string; serie: string; numero: string
+  id: number; serie: string; numero: string
   monto: number; descripcion: string | null; fecha: Date | string
 }
 
 interface FacturaFull {
-  id: string
+  id: number
   proveedor: string; rucProveedor: string | null
   serie: string; numero: string
   fechaEmision: Date | string; fechaVencimiento: Date | string

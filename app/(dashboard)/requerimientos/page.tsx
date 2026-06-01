@@ -1,8 +1,9 @@
 import { prisma } from '@/lib/prisma'
 import { RequerimientosView } from '@/components/requerimientos/RequerimientosView'
+import type { AreaConResponsables } from '@/components/requerimientos/RequerimientosView'
 
 export default async function RequerimientosPage() {
-  const [raw, areas] = await Promise.all([
+  const [raw, areasRaw] = await Promise.all([
     prisma.requerimiento.findMany({
       orderBy: { createdAt: 'desc' },
       include: {
@@ -29,6 +30,14 @@ export default async function RequerimientosPage() {
     area:        r.area.nombre,
     responsable: { nombre: `${r.responsable.nombres} ${r.responsable.apellidos}`.trim() },
     creadoPor:   { nombre: `${r.creadoPor.nombres} ${r.creadoPor.apellidos}`.trim() },
+  }))
+
+  const areas: AreaConResponsables[] = areasRaw.map((a) => ({
+    id:           a.id,
+    nombre:       a.nombre,
+    color:        a.color,
+    tc:           a.tc,
+    responsables: a.responsables.map(r => ({ id: r.id, nombres: r.nombres, apellidos: r.apellidos, correo: r.correo })),
   }))
 
   return <RequerimientosView requerimientos={requerimientos} areas={areas} />

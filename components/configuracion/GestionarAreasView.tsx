@@ -8,10 +8,10 @@ import { crearArea, editarArea, toggleArea } from '@/lib/actions/areas'
 import { crearResponsable, eliminarResponsable } from '@/lib/actions/responsables'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 
-type AreaRow = { id: string; nombre: string; color: string; tc: string; activo: boolean }
+type AreaRow = { id: number; nombre: string; color: string; tc: string; activo: boolean }
 type ResponsableRow = {
-  id: string; nombres: string; apellidos: string; correo: string
-  areaId: string; areaNombre: string; areaColor: string; areaTc: string
+  id: number; nombres: string; apellidos: string; correo: string
+  areaId: number; areaNombre: string; areaColor: string; areaTc: string
 }
 
 const PALETA = [
@@ -55,7 +55,7 @@ export function GestionarAreasView({ areas: inicial, responsables: inicialResp }
   const [areas, setAreas]               = useState<AreaRow[]>(inicial)
   const [responsables, setResponsables] = useState<ResponsableRow[]>(inicialResp)
   const [tabAreas, setTabAreas]         = useState<'activas' | 'inactivas'>('activas')
-  const [editId, setEditId]             = useState<string | null>(null)
+  const [editId, setEditId]             = useState<number | null>(null)
   const [editNombre, setEditNombre]     = useState('')
   const [editColor, setEditColor]       = useState(PALETA[0].color)
   const [editTc, setEditTc]             = useState(PALETA[0].tc)
@@ -132,7 +132,7 @@ export function GestionarAreasView({ areas: inicial, responsables: inicialResp }
     if (!puedeAgregarResp) return
     setCorreoError('')
     startTransition(async () => {
-      const res = await crearResponsable({ nombres: newNombres.trim(), apellidos: newApellidos.trim(), correo: newCorreo.trim(), areaId: newAreaId })
+      const res = await crearResponsable({ nombres: newNombres.trim(), apellidos: newApellidos.trim(), correo: newCorreo.trim(), areaId: parseInt(newAreaId) })
       if (!res.ok) { setCorreoError(res.error); return }
       setResponsables(prev => [...prev, res.responsable])
       setNewNombres(''); setNewApellidos(''); setNewCorreo(''); setNewAreaId('')

@@ -5,7 +5,7 @@ import Link from 'next/link'
 import type { UsuarioRow } from './GestionarUsuariosView'
 
 interface ResponsableRow {
-  id: string; nombres: string; apellidos: string; correo: string
+  id: number; nombres: string; apellidos: string; correo: string
   areaNombre: string; areaColor: string; areaTc: string
 }
 

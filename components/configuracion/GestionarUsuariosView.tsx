@@ -9,7 +9,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import type { Rol } from '@/lib/types'
 
 export type UsuarioRow = {
-  id: string; nombres: string; apellidos: string; email: string
+  id: number; nombres: string; apellidos: string; email: string
   rol: string; activo: boolean; notificaciones: boolean
 }
 

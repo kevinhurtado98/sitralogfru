@@ -10,7 +10,7 @@ export default async function RequerimientoDetallePage({ params }: Props) {
   const { id } = await params
 
   const raw = await prisma.requerimiento.findUnique({
-    where: { id },
+    where: { id: parseInt(id) },
     include: {
       area:        { select: { nombre: true } },
       responsable: { select: { nombres: true, apellidos: true, correo: true } },

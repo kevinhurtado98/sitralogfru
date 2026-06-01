@@ -28,7 +28,7 @@ export async function cambiarPassword(data: {
     return { ok: false, error: issue.message, field: issue.path[0] as 'actual' | 'nueva' | 'confirmar' }
   }
 
-  const user = await prisma.user.findUnique({ where: { id: session.user.id } })
+  const user = await prisma.user.findUnique({ where: { id: Number(session.user.id) } })
   if (!user) return { ok: false, error: 'Usuario no encontrado' }
 
   const actual_ok = await bcrypt.compare(parsed.data.actual, user.password)

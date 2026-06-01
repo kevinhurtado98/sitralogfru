@@ -9,10 +9,10 @@ import { sendWelcomeEmail } from '@/lib/email'
 const DEFAULT_PASSWORD = '12345678'
 
 type UsuarioData = {
-  id: string; nombres: string; apellidos: string; email: string
+  id: number; nombres: string; apellidos: string; email: string
   rol: string; activo: boolean; notificaciones: boolean
 }
-type Ok = { ok: true; usuario: UsuarioData }
+type Ok  = { ok: true; usuario: UsuarioData }
 type Err = { ok: false; error: string }
 
 const schema = z.object({
@@ -54,7 +54,7 @@ export async function crearUsuario(data: {
   }
 }
 
-export async function editarUsuario(id: string, data: {
+export async function editarUsuario(id: number, data: {
   nombres: string; apellidos: string; email: string; rol: string
 }): Promise<Ok | Err> {
   const parsed = schema.safeParse(data)
@@ -74,7 +74,7 @@ export async function editarUsuario(id: string, data: {
   }
 }
 
-export async function toggleUsuarioActivo(id: string, activo: boolean): Promise<{ ok: true } | Err> {
+export async function toggleUsuarioActivo(id: number, activo: boolean): Promise<{ ok: true } | Err> {
   try {
     await prisma.user.update({ where: { id }, data: { activo } })
     revalidatePath('/configuracion')
@@ -84,7 +84,7 @@ export async function toggleUsuarioActivo(id: string, activo: boolean): Promise<
   }
 }
 
-export async function resetPassword(id: string): Promise<{ ok: true } | Err> {
+export async function resetPassword(id: number): Promise<{ ok: true } | Err> {
   try {
     const password = await bcrypt.hash(DEFAULT_PASSWORD, 10)
     await prisma.user.update({ where: { id }, data: { password } })

@@ -11,7 +11,7 @@ import {
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 export interface FacturaRow {
-  id: string
+  id: number
   proveedor: string
   serie: string; numero: string
   fechaVencimiento: Date | string
@@ -83,7 +83,7 @@ function ToggleContable({ factura, onToggle }: {
 
 export function ComprobantesView({ facturas: initial }: { facturas: FacturaRow[] }) {
   const [facturas, setFacturas]     = useState(initial)
-  const [selected, setSelected]     = useState<string[]>([])
+  const [selected, setSelected]     = useState<number[]>([])
   const [busqueda, setBusqueda]     = useState('')
   const [filtroEstado, setFiltroEstado] = useState('')
 
@@ -103,7 +103,7 @@ export function ComprobantesView({ facturas: initial }: { facturas: FacturaRow[]
     return r
   }, [facturas, busqueda, filtroEstado])
 
-  function toggleContable(id: string) {
+  function toggleContable(id: number) {
     setFacturas((prev) => prev.map((f) =>
       f.id === id
         ? {
@@ -115,7 +115,7 @@ export function ComprobantesView({ facturas: initial }: { facturas: FacturaRow[]
     ))
   }
 
-  function toggleSel(id: string) {
+  function toggleSel(id: number) {
     setSelected((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     )

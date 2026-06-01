@@ -5,8 +5,8 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { auth } from '@/lib/auth'
 
-type AreaData = { id: string; nombre: string; color: string; tc: string; activo: boolean }
-type Ok = { ok: true; area: AreaData }
+type AreaData = { id: number; nombre: string; color: string; tc: string; activo: boolean }
+type Ok  = { ok: true; area: AreaData }
 type Err = { ok: false; error: string }
 
 const schema = z.object({
@@ -15,39 +15,31 @@ const schema = z.object({
   tc:     z.string().regex(/^#[0-9A-Fa-f]{6}$/),
 })
 
-function toAreaData(a: { id: string; nombre: string; color: string; tc: string; activo: boolean }): AreaData {
+function toAreaData(a: { id: number; nombre: string; color: string; tc: string; activo: boolean }): AreaData {
   return { id: a.id, nombre: a.nombre, color: a.color, tc: a.tc, activo: a.activo }
 }
 
-async function getUserId(): Promise<string | null> {
+async function getSessionUserId(): Promise<number | null> {
   const session = await auth()
-  if (session?.user?.id) return session.user.id
-  // Fallback: buscar por email si el JWT no tiene id (sesión antigua)
+  const rawId = session?.user?.id ?? null
+  if (rawId) return Number(rawId)
   if (session?.user?.email) {
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-      select: { id: true },
-    })
+    const user = await prisma.user.findUnique({ where: { email: session.user.email }, select: { id: true } })
     return user?.id ?? null
   }
   return null
 }
 
-async function registrarAudit(userId: string, accion: string, entidadId: string, datosAnteriores?: object, datosNuevos?: object) {
+async function registrarAudit(userId: number, accion: string, entidadId: string, datosAnteriores?: object, datosNuevos?: object) {
   try {
     await prisma.auditLog.create({
       data: {
-        userId,
-        modulo: 'CONFIGURACION',
-        accion,
-        entidadId,
+        userId, modulo: 'CONFIGURACION', accion, entidadId,
         ...(datosAnteriores !== undefined ? { datosAnteriores: JSON.stringify(datosAnteriores) } : {}),
         ...(datosNuevos     !== undefined ? { datosNuevos:     JSON.stringify(datosNuevos)     } : {}),
       },
     })
-  } catch (e) {
-    console.error('[audit] ERROR al guardar:', e)
-  }
+  } catch (e) { console.error('[audit]', e) }
 }
 
 export async function crearArea(data: { nombre: string; color: string; tc: string }): Promise<Ok | Err> {
@@ -56,14 +48,8 @@ export async function crearArea(data: { nombre: string; color: string; tc: strin
 
   try {
     const area = await prisma.area.create({ data: parsed.data })
-
-    const userId = await getUserId()
-    if (userId) {
-      await registrarAudit(userId, 'CREAR_AREA', area.id, undefined, {
-        nombre: area.nombre, color: area.color, tc: area.tc,
-      })
-    }
-
+    const userId = await getSessionUserId()
+    if (userId) await registrarAudit(userId, 'CREAR_AREA', String(area.id), undefined, { nombre: area.nombre, color: area.color, tc: area.tc })
     revalidatePath('/configuracion')
     return { ok: true, area: toAreaData(area) }
   } catch (e: unknown) {
@@ -73,29 +59,18 @@ export async function crearArea(data: { nombre: string; color: string; tc: strin
   }
 }
 
-export async function editarArea(id: string, data: { nombre: string; color: string; tc: string }): Promise<Ok | Err> {
+export async function editarArea(id: number, data: { nombre: string; color: string; tc: string }): Promise<Ok | Err> {
   const parsed = schema.safeParse(data)
   if (!parsed.success) return { ok: false, error: 'Datos inválidos' }
 
   try {
-    const anterior = await prisma.area.findUnique({
-      where: { id },
-      select: { nombre: true, color: true, tc: true },
-    })
-
-    const area = await prisma.area.update({ where: { id }, data: parsed.data })
-
-    const userId = await getUserId()
-    if (userId) {
-      await registrarAudit(
-        userId,
-        'EDITAR_AREA',
-        id,
-        anterior ? { nombre: anterior.nombre, color: anterior.color, tc: anterior.tc } : undefined,
-        { nombre: area.nombre, color: area.color, tc: area.tc },
-      )
-    }
-
+    const anterior = await prisma.area.findUnique({ where: { id }, select: { nombre: true, color: true, tc: true } })
+    const area     = await prisma.area.update({ where: { id }, data: parsed.data })
+    const userId   = await getSessionUserId()
+    if (userId) await registrarAudit(userId, 'EDITAR_AREA', String(id),
+      anterior ? { nombre: anterior.nombre, color: anterior.color, tc: anterior.tc } : undefined,
+      { nombre: area.nombre, color: area.color, tc: area.tc },
+    )
     revalidatePath('/configuracion')
     return { ok: true, area: toAreaData(area) }
   } catch (e: unknown) {
@@ -105,26 +80,15 @@ export async function editarArea(id: string, data: { nombre: string; color: stri
   }
 }
 
-export async function toggleArea(id: string, activo: boolean): Promise<{ ok: true } | Err> {
+export async function toggleArea(id: number, activo: boolean): Promise<{ ok: true } | Err> {
   try {
-    const anterior = await prisma.area.findUnique({
-      where: { id },
-      select: { nombre: true },
-    })
-
+    const anterior = await prisma.area.findUnique({ where: { id }, select: { nombre: true } })
     await prisma.area.update({ where: { id }, data: { activo } })
-
-    const userId = await getUserId()
-    if (userId) {
-      await registrarAudit(
-        userId,
-        activo ? 'ACTIVAR_AREA' : 'DESACTIVAR_AREA',
-        id,
-        { nombre: anterior?.nombre ?? id, activo: !activo },
-        { nombre: anterior?.nombre ?? id, activo },
-      )
-    }
-
+    const userId = await getSessionUserId()
+    if (userId) await registrarAudit(userId, activo ? 'ACTIVAR_AREA' : 'DESACTIVAR_AREA', String(id),
+      { nombre: anterior?.nombre ?? id, activo: !activo },
+      { nombre: anterior?.nombre ?? id, activo },
+    )
     revalidatePath('/configuracion')
     return { ok: true }
   } catch (e) {

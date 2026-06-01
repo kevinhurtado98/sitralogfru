@@ -12,11 +12,11 @@ import type { Prioridad, TipoRequerimiento } from '@/lib/types'
 import type { AreaConResponsables } from './RequerimientosView'
 
 export interface TarjetaRapida {
-  id:        string
+  id:        number
   nombres:   string
   apellidos: string
   correo:    string
-  area:      { id: string; nombre: string; color: string; tc: string }
+  area:      { id: number; nombre: string; color: string; tc: string }
 }
 
 // ─── Tarjetas rápidas ────────────────────────────────────────────────────────
@@ -26,7 +26,7 @@ function TarjetasRapidas({
   onSeleccionar,
 }: {
   tarjetas:      TarjetaRapida[]
-  onSeleccionar: (areaId: string, responsableId: string, correo: string) => void
+  onSeleccionar: (areaId: number, responsableId: number, correo: string) => void
 }) {
   if (tarjetas.length === 0) return null
 
@@ -77,10 +77,10 @@ function FormularioDatos({
   onGuardar,
 }: {
   areas:               AreaConResponsables[]
-  areaId:              string
-  onAreaChange:        (id: string) => void
-  responsableId:       string
-  onResponsableChange: (id: string) => void
+  areaId:              number | null
+  onAreaChange:        (id: number) => void
+  responsableId:       number | null
+  onResponsableChange: (id: number) => void
   correoHint:          string
   prioridad:           Prioridad
   setPrioridad:        (v: Prioridad) => void
@@ -130,7 +130,7 @@ function FormularioDatos({
 
         <div className="fi" id="req-area-select">
           <label>Área responsable</label>
-          <select value={areaId} onChange={(e) => onAreaChange(e.target.value)}>
+          <select value={areaId ?? ''} onChange={(e) => onAreaChange(parseInt(e.target.value))}>
             <option value="">← Seleccionar área ←</option>
             {areas.map((a) => <option key={a.id} value={a.id}>{a.nombre}</option>)}
           </select>
@@ -138,7 +138,7 @@ function FormularioDatos({
 
         <div className="fi">
           <label>Responsable</label>
-          <select value={responsableId} onChange={(e) => onResponsableChange(e.target.value)} disabled={!areaId}>
+          <select value={responsableId ?? ''} onChange={(e) => onResponsableChange(parseInt(e.target.value))} disabled={!areaId}>
             <option value="">{areaId ? '← Seleccionar ←' : '← Primero seleccione un área ←'}</option>
             {responsablesDelArea.map((r) => (
               <option key={r.id} value={r.id}>{r.nombres} {r.apellidos}</option>
@@ -223,8 +223,8 @@ export function NuevoRequerimientoView({ areas, tarjetasRapidas }: { areas: Area
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
 
-  const [areaId,        setAreaId]        = useState('')
-  const [responsableId, setResponsableId] = useState('')
+  const [areaId,        setAreaId]        = useState<number | null>(null)
+  const [responsableId, setResponsableId] = useState<number | null>(null)
   const [correoHint,    setCorreoHint]    = useState('')
   const [prioridad,     setPrioridad]     = useState<Prioridad>('ALTA')
   const [tipo,          setTipo]          = useState<TipoRequerimiento>('COMPRA')
@@ -232,22 +232,22 @@ export function NuevoRequerimientoView({ areas, tarjetasRapidas }: { areas: Area
   const [fecha,         setFecha]         = useState(format(new Date(), 'yyyy-MM-dd'))
   const [error,         setError]         = useState('')
 
-  function onSeleccionar(newAreaId: string, newResponsableId: string, correo: string) {
+  function onSeleccionar(newAreaId: number, newResponsableId: number, correo: string) {
     setAreaId(newAreaId)
     setResponsableId(newResponsableId)
     setCorreoHint(correo)
     document.getElementById('req-area-select')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
   }
 
-  function onAreaChange(id: string) {
+  function onAreaChange(id: number) {
     setAreaId(id)
-    setResponsableId('')
+    setResponsableId(null)
     setCorreoHint('')
     const primera = areas.find((a) => a.id === id)?.responsables[0]
     if (primera) { setResponsableId(primera.id); setCorreoHint(primera.correo) }
   }
 
-  function onResponsableChange(id: string) {
+  function onResponsableChange(id: number) {
     setResponsableId(id)
     const r = areas.find((a) => a.id === areaId)?.responsables.find((x) => x.id === id)
     setCorreoHint(r?.correo ?? '')

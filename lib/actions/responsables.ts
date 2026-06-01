@@ -5,22 +5,21 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
 type ResponsableData = {
-  id: string; nombres: string; apellidos: string; correo: string
-  areaId: string; areaNombre: string; areaColor: string; areaTc: string
+  id: number; nombres: string; apellidos: string; correo: string
+  areaId: number; areaNombre: string; areaColor: string; areaTc: string
 }
-
-type Ok = { ok: true; responsable: ResponsableData }
+type Ok  = { ok: true; responsable: ResponsableData }
 type Err = { ok: false; error: string }
 
 const schema = z.object({
   nombres:   z.string().min(1).max(80),
   apellidos: z.string().min(1).max(80),
   correo:    z.string().email({ message: 'Correo inválido' }),
-  areaId:    z.string().cuid(),
+  areaId:    z.number().int(),
 })
 
 export async function crearResponsable(data: {
-  nombres: string; apellidos: string; correo: string; areaId: string
+  nombres: string; apellidos: string; correo: string; areaId: number
 }): Promise<Ok | Err> {
   const parsed = schema.safeParse(data)
   if (!parsed.success) {
@@ -47,7 +46,7 @@ export async function crearResponsable(data: {
   }
 }
 
-export async function eliminarResponsable(id: string): Promise<{ ok: true } | Err> {
+export async function eliminarResponsable(id: number): Promise<{ ok: true } | Err> {
   try {
     await prisma.responsable.delete({ where: { id } })
     revalidatePath('/configuracion')

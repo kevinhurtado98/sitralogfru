@@ -6,7 +6,7 @@ import { calcularSemanaPago } from '@/lib/semana-pago'
 import { addDays, differenceInDays } from 'date-fns'
 
 type RespuestaUpload =
-  | { estado: 'exitoso'; factura: { id: string; serie: string; numero: string; proveedor: string } }
+  | { estado: 'exitoso'; factura: { id: number; serie: string; numero: string; proveedor: string } }
   | { estado: 'ya_existe'; mensaje: string }
   | { estado: 'error'; mensaje: string }
 
@@ -107,16 +107,16 @@ export async function POST(request: NextRequest): Promise<NextResponse<Respuesta
         estado,
         semanaPago,
         viernesPago,
-        creadoPorId: session.user.id,
+        creadoPorId: Number(session.user.id),
       },
     })
 
     await prisma.auditLog.create({
       data: {
-        userId: session.user.id,
+        userId: Number(session.user.id),
         modulo: 'COMPROBANTES',
         accion: 'IMPORTAR_XML',
-        entidadId: factura.id,
+        entidadId: String(factura.id),
         datosNuevos: JSON.stringify({
           serie: datos.serie,
           numero: datos.numero,

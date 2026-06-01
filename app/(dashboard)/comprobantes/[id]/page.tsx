@@ -10,7 +10,7 @@ export default async function FacturaDetallePage({ params }: Props) {
   const { id } = await params
 
   const raw = await prisma.factura.findUnique({
-    where: { id },
+    where: { id: parseInt(id) },
     include: {
       notasCredito: true,
       notasDebito:  true,
