@@ -7,7 +7,6 @@ import {
   IconAlertTriangle, IconSearch, IconEye, IconPencil, IconTrash,
   IconFileCode, IconRotate, IconChecks, IconX, IconCircleCheck,
 } from '@tabler/icons-react'
-import type { EstadoFactura, Moneda, FormaPago } from '@/lib/types'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -16,10 +15,10 @@ export interface FacturaRow {
   proveedor: string
   serie: string; numero: string
   fechaVencimiento: Date | string
-  moneda: Moneda
+  moneda: string
   montoNeto: number
-  estado: EstadoFactura
-  formaPago: FormaPago | null
+  estado: string
+  formaPago: string | null
   semanaPago: number | null
   viernesPago: Date | string | null
   registradoContable: boolean
@@ -28,17 +27,17 @@ export interface FacturaRow {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-const MONEDA_PRE: Record<Moneda, string> = { SOLES: 'S/', DOLARES: '$', EUROS: '€' }
-const FORMA_LABEL: Record<FormaPago, string> = {
+const MONEDA_PRE: Record<string, string> = { SOLES: 'S/', DOLARES: '$', EUROS: '€' }
+const FORMA_LABEL: Record<string, string> = {
   CREDITO: 'Crédito', FACTORING: 'Factoring',
   FACTURA_NEGOCIABLE: 'Factura negociable', LETRA: 'Letra',
 }
 
-function estadoBadgeClass(e: EstadoFactura) {
-  return { POR_VENCER: 'badge-red', PENDIENTE: 'badge-amber', PAGADA: 'badge-green', VENCIDA: 'badge-red' }[e]
+function estadoBadgeClass(e: string) {
+  return ({ POR_VENCER: 'badge-red', PENDIENTE: 'badge-amber', PAGADA: 'badge-green', VENCIDA: 'badge-red' } as Record<string, string>)[e]
 }
-function estadoLabel(e: EstadoFactura) {
-  return { POR_VENCER: 'Por vencer', PENDIENTE: 'Pendiente', PAGADA: 'Pagada', VENCIDA: 'Vencida' }[e]
+function estadoLabel(e: string) {
+  return ({ POR_VENCER: 'Por vencer', PENDIENTE: 'Pendiente', PAGADA: 'Pagada', VENCIDA: 'Vencida' } as Record<string, string>)[e]
 }
 
 // ─── Toggle contable inline ───────────────────────────────────────────────────

@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { format } from 'date-fns'
 import { IconArrowLeft, IconDeviceFloppy, IconCircleCheck, IconFileMinus, IconFilePlus } from '@tabler/icons-react'
-import type { EstadoFactura, Moneda, TipoFactura, FormaPago } from '@/lib/types'
+import type { TipoFactura, FormaPago } from '@/lib/types'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -18,10 +18,10 @@ interface FacturaFull {
   proveedor: string; rucProveedor: string | null
   serie: string; numero: string
   fechaEmision: Date | string; fechaVencimiento: Date | string
-  moneda: Moneda; tipo: TipoFactura
+  moneda: string; tipo: string
   monto: number; retencion: number; detraccion: number; montoNeto: number
-  estado: EstadoFactura
-  formaPago: FormaPago | null
+  estado: string
+  formaPago: string | null
   ordenCompra: string | null
   fechaRegistroContable: Date | string | null
   registradoContable: boolean
@@ -33,12 +33,12 @@ interface FacturaFull {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-const MONEDA_PRE: Record<Moneda, string> = { SOLES: 'S/', DOLARES: '$', EUROS: '€' }
-const MONEDA_LABEL: Record<Moneda, string> = { SOLES: 'Soles (PEN)', DOLARES: 'Dólares (USD)', EUROS: 'Euros (EUR)' }
-const ESTADO_BADGE: Record<EstadoFactura, string> = {
+const MONEDA_PRE: Record<string, string> = { SOLES: 'S/', DOLARES: '$', EUROS: '€' }
+const MONEDA_LABEL: Record<string, string> = { SOLES: 'Soles (PEN)', DOLARES: 'Dólares (USD)', EUROS: 'Euros (EUR)' }
+const ESTADO_BADGE: Record<string, string> = {
   POR_VENCER: 'badge-red', PENDIENTE: 'badge-amber', PAGADA: 'badge-green', VENCIDA: 'badge-red',
 }
-const ESTADO_LABEL: Record<EstadoFactura, string> = {
+const ESTADO_LABEL: Record<string, string> = {
   POR_VENCER: 'Por vencer', PENDIENTE: 'Pendiente', PAGADA: 'Pagada', VENCIDA: 'Vencida',
 }
 
@@ -69,8 +69,8 @@ function Field({ label, value, mono, color, big }: {
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export function FacturaDetalle({ factura: f }: { factura: FacturaFull }) {
-  const [tipo,       setTipo]       = useState<TipoFactura>(f.tipo)
-  const [formaPago,  setFormaPago]  = useState<FormaPago | ''>(f.formaPago ?? '')
+  const [tipo,       setTipo]       = useState<TipoFactura>(f.tipo as TipoFactura)
+  const [formaPago,  setFormaPago]  = useState<FormaPago | ''>((f.formaPago ?? '') as FormaPago | '')
   const [ordenCompra, setOrdenCompra] = useState(f.ordenCompra ?? '')
   const [notas,      setNotas]      = useState(f.notas ?? '')
 
