@@ -2,16 +2,14 @@
 
 import { format } from 'date-fns'
 import { IconArrowLeft } from '@tabler/icons-react'
-import type { EstadoRequerimiento, Prioridad, TipoRequerimiento } from '@/lib/types'
-
 interface RequerimientoCompleto {
   id:                    string
   fechaSolicitud:        Date
   area:                  string
-  prioridad:             Prioridad
-  tipo:                  TipoRequerimiento
+  prioridad:             string
+  tipo:                  string
   descripcion:           string
-  estado:                EstadoRequerimiento
+  estado:                string
   diasRetraso:           number
   fechaEstimadaAtencion: Date | null
   createdAt:             Date
@@ -21,8 +19,8 @@ interface RequerimientoCompleto {
   atendidoPor:           { nombre: string } | null
 }
 
-function estadoBadge(e: EstadoRequerimiento) {
-  const map: Record<EstadoRequerimiento, [string, string]> = {
+function estadoBadge(e: string) {
+  const map: Record<string, [string, string]> = {
     ATENDIDO_TOTAL:    ['badge-green', 'Atendido total'],
     ATENDIDO_PARCIAL:  ['badge-ora',   'Atendido parcial'],
     PENDIENTE:         ['badge-red',   'Pendiente'],

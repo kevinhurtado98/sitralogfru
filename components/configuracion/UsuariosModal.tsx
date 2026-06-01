@@ -8,14 +8,14 @@ type Rol = 'ADMIN' | 'ASISTENTE'
 
 export type UsuarioRow = {
   id: string; nombres: string; apellidos: string; email: string
-  rol: Rol; activo: boolean; notificaciones: boolean
+  rol: string; activo: boolean; notificaciones: boolean
 }
 
 type Mode = 'list' | 'crear' | 'editar'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
-function RolBadge({ rol }: { rol: Rol }) {
+function RolBadge({ rol }: { rol: string }) {
   return (
     <span className={`badge ${rol === 'ADMIN' ? 'badge-blue' : 'badge-slate'}`}>
       {rol === 'ADMIN' ? 'Admin' : 'Asistente'}
@@ -44,7 +44,7 @@ export function UsuariosModal({ usuarios: inicial, onClose }: { usuarios: Usuari
   }
 
   function abrirEditar(u: UsuarioRow) {
-    setNombres(u.nombres); setApellidos(u.apellidos); setEmail(u.email); setRol(u.rol)
+    setNombres(u.nombres); setApellidos(u.apellidos); setEmail(u.email); setRol(u.rol as Rol)
     setEmailError(''); setEditTarget(u); setResetOk(null); setMode('editar')
   }
 

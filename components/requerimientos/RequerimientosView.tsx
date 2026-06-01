@@ -19,10 +19,10 @@ export interface ReqRow {
   id:             string
   fechaSolicitud: Date | string
   area:           string
-  prioridad:      Prioridad
-  tipo:           TipoRequerimiento
+  prioridad:      string
+  tipo:           string
   descripcion:    string
-  estado:         EstadoRequerimiento
+  estado:         string
   diasRetraso:    number
   responsable:    { nombre: string }
   creadoPor:      { nombre: string }
@@ -30,8 +30,8 @@ export interface ReqRow {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function estadoBadge(e: EstadoRequerimiento) {
-  const map: Record<EstadoRequerimiento, [string, string]> = {
+function estadoBadge(e: string) {
+  const map: Record<string, [string, string]> = {
     ATENDIDO_TOTAL:    ['badge-green', 'Atendido total'],
     ATENDIDO_PARCIAL:  ['badge-ora',   'Atendido parcial'],
     PENDIENTE:         ['badge-red',   'Pendiente'],
@@ -42,7 +42,7 @@ function estadoBadge(e: EstadoRequerimiento) {
   return <span className={`badge ${cls}`}>{label}</span>
 }
 
-function prioridadBadge(p: Prioridad) {
+function prioridadBadge(p: string) {
   return p === 'ALTA'
     ? <span className="badge badge-red">Alta</span>
     : <span className="badge badge-amber">Media</span>
