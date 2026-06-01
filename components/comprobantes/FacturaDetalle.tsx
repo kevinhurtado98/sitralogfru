@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { format } from 'date-fns'
 import { IconArrowLeft, IconDeviceFloppy, IconCircleCheck, IconFileMinus, IconFilePlus } from '@tabler/icons-react'
-import type { EstadoFactura, Moneda, TipoFactura, FormaPago } from '@prisma/client'
+import type { EstadoFactura, Moneda, TipoFactura, FormaPago } from '@/lib/types'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 

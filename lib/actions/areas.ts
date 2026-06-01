@@ -41,8 +41,8 @@ async function registrarAudit(userId: string, accion: string, entidadId: string,
         modulo: 'CONFIGURACION',
         accion,
         entidadId,
-        ...(datosAnteriores !== undefined ? { datosAnteriores } : {}),
-        ...(datosNuevos     !== undefined ? { datosNuevos }     : {}),
+        ...(datosAnteriores !== undefined ? { datosAnteriores: JSON.stringify(datosAnteriores) } : {}),
+        ...(datosNuevos     !== undefined ? { datosNuevos:     JSON.stringify(datosNuevos)     } : {}),
       },
     })
   } catch (e) {

@@ -8,7 +8,7 @@ import {
   IconBold, IconItalic, IconUnderline, IconList, IconListNumbers, IconEraser,
 } from '@tabler/icons-react'
 import { crearRequerimiento } from '@/lib/actions/requerimientos'
-import type { Prioridad, TipoRequerimiento } from '@prisma/client'
+import type { Prioridad, TipoRequerimiento } from '@/lib/types'
 import type { AreaConResponsables } from './RequerimientosView'
 
 export interface TarjetaRapida {

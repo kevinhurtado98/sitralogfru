@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react'
 import { format } from 'date-fns'
 import { IconSearch, IconEye, IconPlus } from '@tabler/icons-react'
-import type { EstadoRequerimiento, Prioridad, TipoRequerimiento } from '@prisma/client'
+import type { EstadoRequerimiento, Prioridad, TipoRequerimiento } from '@/lib/types'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 

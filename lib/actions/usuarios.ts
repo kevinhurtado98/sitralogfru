@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import bcrypt from 'bcryptjs'
-import { Rol } from '@prisma/client'
+import type { Rol } from '@/lib/types'
 import { sendWelcomeEmail } from '@/lib/email'
 
 const DEFAULT_PASSWORD = '12345678'

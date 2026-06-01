@@ -7,7 +7,7 @@ import {
   IconAlertTriangle, IconSearch, IconEye, IconPencil, IconTrash,
   IconFileCode, IconRotate, IconChecks, IconX, IconCircleCheck,
 } from '@tabler/icons-react'
-import type { EstadoFactura, Moneda, FormaPago } from '@prisma/client'
+import type { EstadoFactura, Moneda, FormaPago } from '@/lib/types'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 

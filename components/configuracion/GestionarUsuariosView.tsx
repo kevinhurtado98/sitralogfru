@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { toast } from 'sonner'
 import { crearUsuario, editarUsuario, toggleUsuarioActivo, resetPassword } from '@/lib/actions/usuarios'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
-import { Rol } from '@prisma/client'
+import type { Rol } from '@/lib/types'
 
 export type UsuarioRow = {
   id: string; nombres: string; apellidos: string; email: string
@@ -31,7 +31,7 @@ export function GestionarUsuariosView({ usuarios: inicial }: { usuarios: Usuario
   const [nombres, setNombres]           = useState('')
   const [apellidos, setApellidos]       = useState('')
   const [email, setEmail]               = useState('')
-  const [rol, setRol]                   = useState<Rol>(Rol.ASISTENTE)
+  const [rol, setRol]                   = useState<Rol>('ASISTENTE')
   const [emailError, setEmailError]     = useState('')
   const [enviarCorreo, setEnviarCorreo] = useState(true)
   const [pending, startTransition]      = useTransition()
@@ -48,7 +48,7 @@ export function GestionarUsuariosView({ usuarios: inicial }: { usuarios: Usuario
   const inactivos = usuarios.filter(u => !u.activo)
 
   function abrirCrear() {
-    setNombres(''); setApellidos(''); setEmail(''); setRol(Rol.ASISTENTE)
+    setNombres(''); setApellidos(''); setEmail(''); setRol('ASISTENTE')
     setEmailError(''); setEditTarget(null); setEnviarCorreo(true); setMode('crear')
   }
 
@@ -155,8 +155,8 @@ export function GestionarUsuariosView({ usuarios: inicial }: { usuarios: Usuario
               <div className="fi">
                 <label>Rol</label>
                 <select value={rol} onChange={e => setRol(e.target.value as Rol)}>
-                  <option value={Rol.ASISTENTE}>Asistente</option>
-                  <option value={Rol.ADMIN}>Admin</option>
+                  <option value="ASISTENTE">Asistente</option>
+                  <option value="ADMIN">Admin</option>
                 </select>
               </div>
             </div>

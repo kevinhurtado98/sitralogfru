@@ -2,7 +2,7 @@
 
 import { format } from 'date-fns'
 import { IconArrowLeft } from '@tabler/icons-react'
-import type { EstadoRequerimiento, Prioridad, TipoRequerimiento } from '@prisma/client'
+import type { EstadoRequerimiento, Prioridad, TipoRequerimiento } from '@/lib/types'
 
 interface RequerimientoCompleto {
   id:                    string

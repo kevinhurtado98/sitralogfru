@@ -3,18 +3,18 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "sqlserver"
 }
 
 // ─── AUTH ────────────────────────────────────────────────────────────────────
 
 model User {
   id             String   @id @default(cuid())
-  nombres        String
-  apellidos      String
-  email          String   @unique
-  password       String
-  rol            Rol      @default(ASISTENTE)
+  nombres        String   @db.NVarChar(100)
+  apellidos      String   @db.NVarChar(100)
+  email          String   @unique @db.NVarChar(200)
+  password       String   @db.NVarChar(200)
+  rol            String   @default("ASISTENTE") @db.NVarChar(20)
   activo         Boolean  @default(true)
   notificaciones Boolean  @default(false)
   createdAt      DateTime @default(now())
@@ -29,56 +29,56 @@ model User {
   accounts Account[]
   sessions Session[]
 
-  @@map("users")
+  @@map("Users")
 }
 
 model Account {
   id                String  @id @default(cuid())
   userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  type              String  @db.NVarChar(50)
+  provider          String  @db.NVarChar(100)
+  providerAccountId String  @db.NVarChar(200)
+  refresh_token     String? @db.NVarChar(Max)
+  access_token      String? @db.NVarChar(Max)
   expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String? @db.Text
-  session_state     String?
+  token_type        String? @db.NVarChar(50)
+  scope             String? @db.NVarChar(200)
+  id_token          String? @db.NVarChar(Max)
+  session_state     String? @db.NVarChar(200)
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([provider, providerAccountId])
-  @@map("accounts")
+  @@map("Accounts")
 }
 
 model Session {
   id           String   @id @default(cuid())
-  sessionToken String   @unique
+  sessionToken String   @unique @db.NVarChar(500)
   userId       String
   expires      DateTime
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  @@map("sessions")
+  @@map("Sessions")
 }
 
 model VerificationToken {
-  identifier String
-  token      String   @unique
+  identifier String   @db.NVarChar(200)
+  token      String   @unique @db.NVarChar(500)
   expires    DateTime
 
   @@unique([identifier, token])
-  @@map("verification_tokens")
+  @@map("VerificationTokens")
 }
 
 // ─── CONFIGURACIÓN ───────────────────────────────────────────────────────────
 
 model Area {
   id        String   @id @default(cuid())
-  nombre    String   @unique
-  color     String
-  tc        String
+  nombre    String   @unique @db.NVarChar(100)
+  color     String   @db.NVarChar(10)
+  tc        String   @db.NVarChar(10)
   activo    Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -86,116 +86,116 @@ model Area {
   responsables   Responsable[]
   requerimientos Requerimiento[]
 
-  @@map("areas")
+  @@map("Areas")
 }
 
 model Responsable {
   id        String   @id @default(cuid())
-  nombres   String
-  apellidos String
-  correo    String   @unique
+  nombres   String   @db.NVarChar(100)
+  apellidos String   @db.NVarChar(100)
+  correo    String   @unique @db.NVarChar(200)
   areaId    String
   activo    Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  area           Area            @relation(fields: [areaId], references: [id])
+  area           Area            @relation(fields: [areaId], references: [id], onUpdate: NoAction, onDelete: NoAction)
   requerimientos Requerimiento[]
 
-  @@map("responsables")
+  @@map("Responsables")
 }
 
 // ─── COMPROBANTES ────────────────────────────────────────────────────────────
 
 model Factura {
-  id                    String        @id @default(cuid())
-  proveedor             String
-  rucProveedor          String?
-  serie                 String
-  numero                String
+  id                    String   @id @default(cuid())
+  proveedor             String   @db.NVarChar(200)
+  rucProveedor          String?  @db.NVarChar(20)
+  serie                 String   @db.NVarChar(10)
+  numero                String   @db.NVarChar(20)
   fechaEmision          DateTime
   fechaVencimiento      DateTime
-  moneda                Moneda        @default(SOLES)
-  tipo                  TipoFactura
-  monto                 Decimal       @db.Decimal(12, 2)
-  retencion             Decimal       @default(0) @db.Decimal(12, 2)
-  detraccion            Decimal       @default(0) @db.Decimal(12, 2)
-  montoNeto             Decimal       @db.Decimal(12, 2)
-  estado                EstadoFactura @default(PENDIENTE)
-  formaPago             FormaPago?
-  ordenCompra           String?
+  moneda                String   @default("SOLES") @db.NVarChar(10)
+  tipo                  String   @db.NVarChar(20)
+  monto                 Decimal  @db.Decimal(12, 2)
+  retencion             Decimal  @default(0) @db.Decimal(12, 2)
+  detraccion            Decimal  @default(0) @db.Decimal(12, 2)
+  montoNeto             Decimal  @db.Decimal(12, 2)
+  estado                String   @default("PENDIENTE") @db.NVarChar(20)
+  formaPago             String?  @db.NVarChar(25)
+  ordenCompra           String?  @db.NVarChar(50)
   fechaRegistroContable DateTime?
-  registradoContable    Boolean       @default(false)
+  registradoContable    Boolean  @default(false)
   semanaPago            Int?
   viernesPago           DateTime?
-  notas                 String?       @db.Text
-  xmlUrl                String?
+  notas                 String?  @db.NVarChar(Max)
+  xmlUrl                String?  @db.NVarChar(500)
   creadoPorId           String
-  createdAt             DateTime      @default(now())
-  updatedAt             DateTime      @updatedAt
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 
-  creadoPor    User          @relation("FacturaCreadaPor", fields: [creadoPorId], references: [id])
+  creadoPor    User          @relation("FacturaCreadaPor", fields: [creadoPorId], references: [id], onUpdate: NoAction, onDelete: NoAction)
   notasCredito NotaCredito[]
   notasDebito  NotaDebito[]
 
   @@unique([serie, numero])
-  @@map("facturas")
+  @@map("Facturas")
 }
 
 model NotaCredito {
   id          String   @id @default(cuid())
   facturaId   String
-  serie       String
-  numero      String
+  serie       String   @db.NVarChar(10)
+  numero      String   @db.NVarChar(20)
   monto       Decimal  @db.Decimal(12, 2)
-  descripcion String?  @db.Text
+  descripcion String?  @db.NVarChar(Max)
   fecha       DateTime
   createdAt   DateTime @default(now())
 
-  factura Factura @relation(fields: [facturaId], references: [id], onDelete: Cascade)
+  factura Factura @relation(fields: [facturaId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  @@map("notas_credito")
+  @@map("NotasCredito")
 }
 
 model NotaDebito {
   id          String   @id @default(cuid())
   facturaId   String
-  serie       String
-  numero      String
+  serie       String   @db.NVarChar(10)
+  numero      String   @db.NVarChar(20)
   monto       Decimal  @db.Decimal(12, 2)
-  descripcion String?  @db.Text
+  descripcion String?  @db.NVarChar(Max)
   fecha       DateTime
   createdAt   DateTime @default(now())
 
-  factura Factura @relation(fields: [facturaId], references: [id], onDelete: Cascade)
+  factura Factura @relation(fields: [facturaId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  @@map("notas_debito")
+  @@map("NotasDebito")
 }
 
 // ─── REQUERIMIENTOS ──────────────────────────────────────────────────────────
 
 model Requerimiento {
-  id                    String              @id @default(cuid())
+  id                    String   @id @default(cuid())
   fechaSolicitud        DateTime
   areaId                String
   responsableId         String
-  prioridad             Prioridad
-  tipo                  TipoRequerimiento
-  descripcion           String              @db.VarChar(1000)
-  estado                EstadoRequerimiento @default(PENDIENTE)
-  diasRetraso           Int                 @default(0)
+  prioridad             String   @default("ALTA") @db.NVarChar(10)
+  tipo                  String   @db.NVarChar(15)
+  descripcion           String   @db.NVarChar(1000)
+  estado                String   @default("PENDIENTE") @db.NVarChar(25)
+  diasRetraso           Int      @default(0)
   fechaEstimadaAtencion DateTime?
   creadoPorId           String
   atendidoPorId         String?
-  createdAt             DateTime            @default(now())
-  updatedAt             DateTime            @updatedAt
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 
-  area        Area        @relation(fields: [areaId], references: [id])
-  responsable Responsable @relation(fields: [responsableId], references: [id])
-  creadoPor   User        @relation("RequerimientoCreadoPor", fields: [creadoPorId], references: [id])
-  atendidoPor User?       @relation("RequerimientoAtendidoPor", fields: [atendidoPorId], references: [id])
+  area        Area        @relation(fields: [areaId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  responsable Responsable @relation(fields: [responsableId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  creadoPor   User        @relation("RequerimientoCreadoPor", fields: [creadoPorId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  atendidoPor User?       @relation("RequerimientoAtendidoPor", fields: [atendidoPorId], references: [id], onUpdate: NoAction, onDelete: NoAction)
 
-  @@map("requerimientos")
+  @@map("Requerimientos")
 }
 
 // ─── AUDITORÍA ───────────────────────────────────────────────────────────────
@@ -203,72 +203,14 @@ model Requerimiento {
 model AuditLog {
   id              String   @id @default(cuid())
   userId          String
-  modulo          Modulo
-  accion          String
-  entidadId       String
-  datosAnteriores Json?
-  datosNuevos     Json?
+  modulo          String   @db.NVarChar(30)
+  accion          String   @db.NVarChar(100)
+  entidadId       String   @db.NVarChar(100)
+  datosAnteriores String?  @db.NVarChar(Max)
+  datosNuevos     String?  @db.NVarChar(Max)
   createdAt       DateTime @default(now())
 
-  user User @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id], onUpdate: NoAction, onDelete: NoAction)
 
-  @@map("audit_logs")
-}
-
-// ─── ENUMS ───────────────────────────────────────────────────────────────────
-
-enum Rol {
-  ADMIN
-  ASISTENTE
-}
-
-enum Moneda {
-  SOLES
-  DOLARES
-  EUROS
-}
-
-enum TipoFactura {
-  COMPRA
-  SERVICIO
-}
-
-enum EstadoFactura {
-  POR_VENCER
-  PENDIENTE
-  PAGADA
-  VENCIDA
-}
-
-enum FormaPago {
-  CREDITO
-  FACTORING
-  FACTURA_NEGOCIABLE
-  LETRA
-}
-
-enum Prioridad {
-  ALTA
-  MEDIA
-}
-
-enum TipoRequerimiento {
-  COMPRA
-  SERVICIO
-}
-
-enum EstadoRequerimiento {
-  ATENDIDO_TOTAL
-  ATENDIDO_PARCIAL
-  PENDIENTE
-  NO_ATENDIDO
-  GESTION_REALIZADA
-}
-
-enum Modulo {
-  COMPROBANTES
-  REQUERIMIENTOS
-  USUARIOS
-  AUTH
-  CONFIGURACION
+  @@map("AuditLogs")
 }

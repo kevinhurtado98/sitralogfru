@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { auth } from '@/lib/auth'
-import type { EstadoRequerimiento } from '@prisma/client'
+import type { EstadoRequerimiento } from '@/lib/types'
 
 type Err = { ok: false; error: string }
 
@@ -71,10 +71,10 @@ export async function crearRequerimiento(data: {
         modulo:    'REQUERIMIENTOS',
         accion:    'CREAR_REQUERIMIENTO',
         entidadId: req.id,
-        datosNuevos: {
+        datosNuevos: JSON.stringify({
           areaId: req.areaId, responsableId: req.responsableId,
           prioridad: req.prioridad, tipo: req.tipo,
-        },
+        }),
       },
     })
 
@@ -115,8 +115,8 @@ export async function cambiarEstadoRequerimiento(
         modulo:    'REQUERIMIENTOS',
         accion:    'CAMBIAR_ESTADO',
         entidadId: id,
-        datosAnteriores: { estado: anterior?.estado },
-        datosNuevos:     { estado },
+        datosAnteriores: JSON.stringify({ estado: anterior?.estado }),
+        datosNuevos:     JSON.stringify({ estado }),
       },
     })
 
