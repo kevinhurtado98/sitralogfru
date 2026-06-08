@@ -130,6 +130,80 @@ export async function eliminarFactura(id: number): Promise<{ ok: true } | Err> {
   }
 }
 
+export async function crearNotaCredito(
+  facturaId: number,
+  data: { serie: string; numero: string; monto: number; descripcion: string; fecha: string },
+): Promise<{ ok: true } | Err> {
+  const userId = await getSessionUserId()
+  if (!userId) return { ok: false, error: 'No autenticado' }
+
+  try {
+    const nota = await prisma.notaCredito.create({
+      data: {
+        facturaId,
+        serie:       data.serie.trim(),
+        numero:      data.numero.trim(),
+        monto:       data.monto,
+        descripcion: data.descripcion.trim() || null,
+        fecha:       new Date(data.fecha),
+      },
+    })
+
+    await prisma.auditLog.create({
+      data: {
+        userId,
+        modulo:      'COMPROBANTES',
+        accion:      'CREAR',
+        entidadId:   String(facturaId),
+        datosNuevos: JSON.stringify({ tipo: 'NOTA_CREDITO', notaId: nota.id, ...data }),
+      },
+    })
+
+    revalidatePath(`/comprobantes/${facturaId}`)
+    return { ok: true }
+  } catch (e) {
+    console.error('[crearNotaCredito]', e)
+    return { ok: false, error: 'Error al crear la nota de crédito' }
+  }
+}
+
+export async function crearNotaDebito(
+  facturaId: number,
+  data: { serie: string; numero: string; monto: number; descripcion: string; fecha: string },
+): Promise<{ ok: true } | Err> {
+  const userId = await getSessionUserId()
+  if (!userId) return { ok: false, error: 'No autenticado' }
+
+  try {
+    const nota = await prisma.notaDebito.create({
+      data: {
+        facturaId,
+        serie:       data.serie.trim(),
+        numero:      data.numero.trim(),
+        monto:       data.monto,
+        descripcion: data.descripcion.trim() || null,
+        fecha:       new Date(data.fecha),
+      },
+    })
+
+    await prisma.auditLog.create({
+      data: {
+        userId,
+        modulo:      'COMPROBANTES',
+        accion:      'CREAR',
+        entidadId:   String(facturaId),
+        datosNuevos: JSON.stringify({ tipo: 'NOTA_DEBITO', notaId: nota.id, ...data }),
+      },
+    })
+
+    revalidatePath(`/comprobantes/${facturaId}`)
+    return { ok: true }
+  } catch (e) {
+    console.error('[crearNotaDebito]', e)
+    return { ok: false, error: 'Error al crear la nota de débito' }
+  }
+}
+
 export async function toggleRegistroContable(
   id: number,
   registrado: boolean,

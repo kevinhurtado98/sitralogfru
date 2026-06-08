@@ -4,9 +4,11 @@ import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { format } from 'date-fns'
-import { IconArrowLeft, IconDeviceFloppy, IconCircleCheck, IconFileMinus, IconFilePlus, IconCheck } from '@tabler/icons-react'
+import * as Dialog from '@radix-ui/react-dialog'
+import { motion, AnimatePresence } from 'motion/react'
+import { IconArrowLeft, IconDeviceFloppy, IconCircleCheck, IconFileMinus, IconFilePlus, IconCheck, IconX } from '@tabler/icons-react'
 import type { TipoFactura, FormaPago } from '@/lib/types'
-import { actualizarFactura, marcarComoPagada } from '@/lib/actions/comprobantes'
+import { actualizarFactura, marcarComoPagada, crearNotaCredito, crearNotaDebito } from '@/lib/actions/comprobantes'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -72,6 +74,171 @@ function Field({ label, value, mono, color, big }: {
   )
 }
 
+// ─── NotaModal ───────────────────────────────────────────────────────────────
+
+const overlayV = { hidden: { opacity: 0 }, show: { opacity: 1 }, exit: { opacity: 0 } }
+const dialogV  = {
+  hidden: { opacity: 0, scale: 0.96, x: '-50%', y: 'calc(-50% + 10px)' },
+  show:   { opacity: 1, scale: 1,    x: '-50%', y: '-50%', transition: { type: 'spring' as const, stiffness: 380, damping: 28 } },
+  exit:   { opacity: 0, scale: 0.95, x: '-50%', y: 'calc(-50% + 6px)', transition: { duration: 0.14 } },
+}
+
+interface NotaModalProps {
+  open:      boolean
+  onClose:   () => void
+  tipo:      'credito' | 'debito'
+  facturaId: number
+  moneda:    string
+  onSuccess: () => void
+}
+
+function NotaModal({ open, onClose, tipo, facturaId, moneda, onSuccess }: NotaModalProps) {
+  const [isPending, startTransition] = useTransition()
+  const [serie,       setSerie]       = useState('')
+  const [numero,      setNumero]      = useState('')
+  const [monto,       setMonto]       = useState('')
+  const [descripcion, setDescripcion] = useState('')
+  const [fecha,       setFecha]       = useState(format(new Date(), 'yyyy-MM-dd'))
+  const [error,       setError]       = useState<string | null>(null)
+
+  const MONEDA_PRE: Record<string, string> = { SOLES: 'S/', DOLARES: '$', EUROS: '€' }
+  const label = tipo === 'credito' ? 'Nota de Crédito' : 'Nota de Débito'
+  const color = tipo === 'credito' ? 'var(--green)' : 'var(--red)'
+
+  function resetAndClose() {
+    setSerie(''); setNumero(''); setMonto(''); setDescripcion('')
+    setFecha(format(new Date(), 'yyyy-MM-dd')); setError(null)
+    onClose()
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setError(null)
+    const montoNum = parseFloat(monto)
+    if (!serie.trim() || !numero.trim() || isNaN(montoNum) || montoNum <= 0 || !fecha) {
+      setError('Serie, número, monto y fecha son obligatorios.')
+      return
+    }
+    const action = tipo === 'credito' ? crearNotaCredito : crearNotaDebito
+    startTransition(async () => {
+      const res = await action(facturaId, { serie, numero, monto: montoNum, descripcion, fecha })
+      if (res.ok) {
+        onSuccess()
+        resetAndClose()
+      } else {
+        setError(res.error)
+      }
+    })
+  }
+
+  return (
+    <Dialog.Root open={open} onOpenChange={(v) => { if (!v) resetAndClose() }}>
+      <AnimatePresence>
+        {open && (
+          <Dialog.Portal forceMount>
+            <Dialog.Overlay asChild forceMount>
+              <motion.div variants={overlayV} initial="hidden" animate="show" exit="exit"
+                style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 200 }}
+              />
+            </Dialog.Overlay>
+            <Dialog.Content asChild forceMount>
+              <motion.div variants={dialogV} initial="hidden" animate="show" exit="exit"
+                style={{
+                  position: 'fixed', top: '50%', left: '50%', zIndex: 201,
+                  background: 'var(--bg)', borderRadius: 'var(--rl)',
+                  boxShadow: '0 8px 40px rgba(0,0,0,0.16), 0 1px 3px rgba(0,0,0,0.08)',
+                  border: '1px solid var(--bl)',
+                  padding: '24px 24px 20px',
+                  width: 420, maxWidth: 'calc(100vw - 32px)',
+                  outline: 'none',
+                }}
+              >
+                {/* Header */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+                  <Dialog.Title style={{ fontSize: 15, fontWeight: 600, color, margin: 0 }}>
+                    {label}
+                  </Dialog.Title>
+                  <Dialog.Close asChild>
+                    <button className="btn btn-sm" style={{ padding: '3px 6px' }}>
+                      <IconX size={13} />
+                    </button>
+                  </Dialog.Close>
+                </div>
+
+                {error && (
+                  <div style={{
+                    padding: '7px 10px', borderRadius: 'var(--r)', fontSize: 12,
+                    background: '#fef2f2', color: 'var(--red)', border: '1px solid #fecaca',
+                    marginBottom: 14,
+                  }}>
+                    {error}
+                  </div>
+                )}
+
+                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    <div className="fi">
+                      <label>Serie *</label>
+                      <input
+                        type="text" value={serie} onChange={(e) => setSerie(e.target.value)}
+                        placeholder="FC01" style={{ fontFamily: 'var(--fm)', textTransform: 'uppercase' }}
+                        maxLength={10}
+                      />
+                    </div>
+                    <div className="fi">
+                      <label>Número *</label>
+                      <input
+                        type="text" value={numero} onChange={(e) => setNumero(e.target.value)}
+                        placeholder="00000001" style={{ fontFamily: 'var(--fm)' }}
+                        maxLength={20}
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    <div className="fi">
+                      <label>Monto ({MONEDA_PRE[moneda] ?? moneda}) *</label>
+                      <input
+                        type="number" value={monto} onChange={(e) => setMonto(e.target.value)}
+                        placeholder="0.00" min="0.01" step="0.01"
+                      />
+                    </div>
+                    <div className="fi">
+                      <label>Fecha *</label>
+                      <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} />
+                    </div>
+                  </div>
+
+                  <div className="fi">
+                    <label>Descripción</label>
+                    <textarea
+                      value={descripcion} onChange={(e) => setDescripcion(e.target.value)}
+                      placeholder="Motivo o descripción..."
+                      rows={2}
+                    />
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 4 }}>
+                    <Dialog.Close asChild>
+                      <button type="button" className="btn" disabled={isPending}>Cancelar</button>
+                    </Dialog.Close>
+                    <button
+                      type="submit" className="btn btn-p" disabled={isPending}
+                      style={{ minWidth: 90 }}
+                    >
+                      {isPending ? 'Guardando...' : `Registrar ${label}`}
+                    </button>
+                  </div>
+                </form>
+              </motion.div>
+            </Dialog.Content>
+          </Dialog.Portal>
+        )}
+      </AnimatePresence>
+    </Dialog.Root>
+  )
+}
+
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export function FacturaDetalle({ factura: f }: { factura: FacturaFull }) {
@@ -86,6 +253,7 @@ export function FacturaDetalle({ factura: f }: { factura: FacturaFull }) {
   const [fechaRegistroContable, setFechaRegistroContable] = useState(fmtInput(f.fechaRegistroContable))
   const [estado,                setEstado]                = useState(f.estado)
   const [feedback,              setFeedback]              = useState<{ ok: boolean; msg: string } | null>(null)
+  const [notaModal,             setNotaModal]             = useState<'credito' | 'debito' | null>(null)
 
   function handleGuardar() {
     setFeedback(null)
@@ -283,8 +451,12 @@ export function FacturaDetalle({ factura: f }: { factura: FacturaFull }) {
       <div className="dc">
         <div className="ss">Documentos enlazados</div>
         <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap', marginBottom: 12 }}>
-          <button className="btn btn-sm"><IconFileMinus size={13} /> Nota de crédito</button>
-          <button className="btn btn-sm"><IconFilePlus size={13} /> Nota de débito</button>
+          <button className="btn btn-sm" onClick={() => setNotaModal('credito')}>
+            <IconFileMinus size={13} /> Nota de crédito
+          </button>
+          <button className="btn btn-sm" onClick={() => setNotaModal('debito')}>
+            <IconFilePlus size={13} /> Nota de débito
+          </button>
         </div>
 
         {f.notasCredito.length === 0 && f.notasDebito.length === 0 ? (
@@ -343,6 +515,18 @@ export function FacturaDetalle({ factura: f }: { factura: FacturaFull }) {
           <IconCircleCheck size={13} /> {estado === 'PAGADA' ? '✓ Pagada' : 'Marcar como pagada'}
         </button>
       </div>
+
+      <NotaModal
+        open={notaModal !== null}
+        onClose={() => setNotaModal(null)}
+        tipo={notaModal ?? 'credito'}
+        facturaId={f.id}
+        moneda={f.moneda}
+        onSuccess={() => {
+          router.refresh()
+          setFeedback({ ok: true, msg: notaModal === 'credito' ? 'Nota de crédito registrada.' : 'Nota de débito registrada.' })
+        }}
+      />
 
     </div>
   )

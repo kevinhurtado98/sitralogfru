@@ -1,3 +1,4 @@
+import { Tailwind } from '@react-email/tailwind'
 import {
   Html, Head, Body, Container, Section,
   Text, Heading, Hr, Row, Column, Font,
@@ -13,188 +14,88 @@ interface Props {
 
 export function BienvenidaEmail({ nombres, apellidos, correo, contrasena, appUrl }: Props) {
   return (
-    <Html lang="es">
-      <Head>
-        <Font
-          fontFamily="DM Sans"
-          fallbackFontFamily="Arial"
-          webFont={{ url: 'https://fonts.gstatic.com/s/dmsans/v15/rP2Hp2ywxg089UriCZOIHQ.woff2', format: 'woff2' }}
-          fontWeight={400}
-          fontStyle="normal"
-        />
-      </Head>
-      <Body style={body}>
-        <Container style={container}>
+    <Tailwind>
+      <Html lang="es">
+        <Head>
+          <Font
+            fontFamily="DM Sans"
+            fallbackFontFamily="Arial"
+            webFont={{ url: 'https://fonts.gstatic.com/s/dmsans/v15/rP2Hp2ywxg089UriCZOIHQ.woff2', format: 'woff2' }}
+            fontWeight={400}
+            fontStyle="normal"
+          />
+        </Head>
 
-          {/* Header */}
-          <Section style={header}>
-            <Text style={headerLabel}>SITRALOGFRU</Text>
-          </Section>
+        <Body className="bg-[#f0ede8] m-0 py-8 font-sans">
+          <Container className="max-w-[520px] mx-auto bg-white rounded-xl overflow-hidden border border-black/8">
 
-          {/* Body */}
-          <Section style={content}>
-            <Heading style={h1}>Bienvenido al sistema</Heading>
-            <Text style={greeting}>
-              Hola <strong>{nombres} {apellidos}</strong>, tu cuenta ha sido creada en SITRALOGFRU.
-              A continuación encontrarás tus credenciales de acceso.
-            </Text>
-
-            {/* Credentials card */}
-            <Section style={credCard}>
-              <Row>
-                <Column>
-                  <Text style={credLabel}>Correo</Text>
-                  <Text style={credValue}>{correo}</Text>
-                </Column>
-              </Row>
-              <Hr style={credDivider} />
-              <Row>
-                <Column>
-                  <Text style={credLabel}>Contraseña temporal</Text>
-                  <Text style={credValueMono}>{contrasena}</Text>
-                </Column>
-              </Row>
+            {/* Header */}
+            <Section className="bg-[#1a1a18] px-8 py-5">
+              <Text className="text-white text-[13px] font-bold tracking-[1.5px] m-0">
+                SITRALOGFRU
+              </Text>
             </Section>
 
-            <Text style={note}>
-              Por seguridad, te recomendamos cambiar tu contraseña la próxima vez que ingreses al sistema.
-            </Text>
+            {/* Content */}
+            <Section className="px-8 pt-8 pb-6">
+              <Heading className="text-[#1a1a18] text-[22px] font-bold tracking-tight m-0 mb-3">
+                Bienvenido al sistema
+              </Heading>
+              <Text className="text-[#6b6b65] text-sm leading-relaxed m-0 mb-6">
+                Hola <strong>{nombres} {apellidos}</strong>, tu cuenta ha sido creada en SITRALOGFRU.
+                A continuación encontrarás tus credenciales de acceso.
+              </Text>
 
-            <Section style={{ textAlign: 'center' as const, marginTop: 24 }}>
-              <a href={appUrl} style={button}>Ingresar al sistema</a>
+              {/* Credentials card */}
+              <Section className="bg-[#f7f7f5] rounded-lg border border-black/8 px-5 py-4 mb-5">
+                <Row>
+                  <Column>
+                    <Text className="text-[10px] font-semibold text-[#9e9e96] uppercase tracking-[0.6px] m-0 mb-1">
+                      Correo
+                    </Text>
+                    <Text className="text-sm font-medium text-[#1a1a18] m-0">
+                      {correo}
+                    </Text>
+                  </Column>
+                </Row>
+                <Hr className="border-black/8 my-3" />
+                <Row>
+                  <Column>
+                    <Text className="text-[10px] font-semibold text-[#9e9e96] uppercase tracking-[0.6px] m-0 mb-1">
+                      Contraseña temporal
+                    </Text>
+                    <Text className="text-[16px] font-semibold text-[#1a1a18] tracking-widest font-mono m-0">
+                      {contrasena}
+                    </Text>
+                  </Column>
+                </Row>
+              </Section>
+
+              <Text className="text-[12px] text-[#9e9e96] leading-relaxed m-0 mb-6">
+                Por seguridad, te recomendamos cambiar tu contraseña la próxima vez que ingreses al sistema.
+              </Text>
+
+              <Section className="text-center mt-6">
+                <a
+                  href={appUrl}
+                  className="inline-block bg-[#1a1a18] text-white text-[13px] font-semibold px-6 py-3 rounded-md no-underline"
+                >
+                  Ingresar al sistema
+                </a>
+              </Section>
             </Section>
-          </Section>
 
-          {/* Footer */}
-          <Section style={footer}>
-            <Text style={footerText}>
-              Este correo fue generado automáticamente por SITRALOGFRU.
-              Si no esperabas este mensaje, puedes ignorarlo.
-            </Text>
-          </Section>
+            {/* Footer */}
+            <Section className="bg-[#f7f7f5] px-8 py-4 border-t border-black/6">
+              <Text className="text-[11px] text-[#9e9e96] leading-snug m-0 text-center">
+                Este correo fue generado automáticamente por SITRALOGFRU.
+                Si no esperabas este mensaje, puedes ignorarlo.
+              </Text>
+            </Section>
 
-        </Container>
-      </Body>
-    </Html>
+          </Container>
+        </Body>
+      </Html>
+    </Tailwind>
   )
-}
-
-// ─── Estilos ─────────────────────────────────────────────────────────────────
-
-const body: React.CSSProperties = {
-  backgroundColor: '#f0ede8',
-  fontFamily: "'DM Sans', Arial, sans-serif",
-  margin: 0,
-  padding: '32px 0',
-}
-
-const container: React.CSSProperties = {
-  maxWidth: 520,
-  margin: '0 auto',
-  backgroundColor: '#ffffff',
-  borderRadius: 12,
-  overflow: 'hidden',
-  border: '1px solid rgba(0,0,0,0.08)',
-}
-
-const header: React.CSSProperties = {
-  backgroundColor: '#1a1a18',
-  padding: '20px 32px',
-}
-
-const headerLabel: React.CSSProperties = {
-  color: '#ffffff',
-  fontSize: 13,
-  fontWeight: 700,
-  letterSpacing: '1.5px',
-  margin: 0,
-}
-
-const content: React.CSSProperties = {
-  padding: '32px 32px 24px',
-}
-
-const h1: React.CSSProperties = {
-  fontSize: 22,
-  fontWeight: 700,
-  color: '#1a1a18',
-  margin: '0 0 12px',
-  letterSpacing: '-0.3px',
-}
-
-const greeting: React.CSSProperties = {
-  fontSize: 14,
-  color: '#6b6b65',
-  lineHeight: '1.6',
-  margin: '0 0 24px',
-}
-
-const credCard: React.CSSProperties = {
-  backgroundColor: '#f7f7f5',
-  border: '1px solid rgba(0,0,0,0.08)',
-  borderRadius: 8,
-  padding: '16px 20px',
-  marginBottom: 20,
-}
-
-const credLabel: React.CSSProperties = {
-  fontSize: 10,
-  fontWeight: 600,
-  color: '#9e9e96',
-  textTransform: 'uppercase' as const,
-  letterSpacing: '0.6px',
-  margin: '0 0 3px',
-}
-
-const credValue: React.CSSProperties = {
-  fontSize: 14,
-  color: '#1a1a18',
-  fontWeight: 500,
-  margin: 0,
-}
-
-const credValueMono: React.CSSProperties = {
-  ...credValue,
-  fontFamily: "'DM Mono', 'Courier New', monospace",
-  fontSize: 16,
-  fontWeight: 600,
-  letterSpacing: '1px',
-}
-
-const credDivider: React.CSSProperties = {
-  borderColor: 'rgba(0,0,0,0.08)',
-  margin: '12px 0',
-}
-
-const note: React.CSSProperties = {
-  fontSize: 12,
-  color: '#9e9e96',
-  lineHeight: '1.6',
-  margin: '0 0 4px',
-}
-
-const button: React.CSSProperties = {
-  display: 'inline-block',
-  backgroundColor: '#1a1a18',
-  color: '#ffffff',
-  fontSize: 13,
-  fontWeight: 600,
-  padding: '11px 24px',
-  borderRadius: 6,
-  textDecoration: 'none',
-  letterSpacing: '0.1px',
-}
-
-const footer: React.CSSProperties = {
-  backgroundColor: '#f7f7f5',
-  padding: '16px 32px',
-  borderTop: '1px solid rgba(0,0,0,0.06)',
-}
-
-const footerText: React.CSSProperties = {
-  fontSize: 11,
-  color: '#9e9e96',
-  lineHeight: '1.5',
-  margin: 0,
-  textAlign: 'center' as const,
 }

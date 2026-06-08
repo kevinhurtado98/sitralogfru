@@ -5,23 +5,32 @@ import {
 } from '@react-email/components'
 import { format } from 'date-fns'
 
-export interface RequerimientoEmailItem {
-  id:             number
-  area:           string
-  responsable:    string
-  prioridad:      string
-  diasRetraso:    number
-  descripcion:    string
-  fechaSolicitud: Date
+export interface FacturaEmailItem {
+  id:                 number
+  proveedor:          string
+  serie:              string
+  numero:             string
+  fechaVencimiento:   Date
+  moneda:             string
+  montoNeto:          number
+  formaPago:          string | null
+  registradoContable: boolean
+  diasVencida:        number
 }
 
 interface Props {
-  requerimientos: RequerimientoEmailItem[]
-  appUrl?:        string
+  facturas: FacturaEmailItem[]
+  appUrl?:  string
 }
 
-export function RequerimientosPendientesEmail({ requerimientos, appUrl = 'http://localhost:3000' }: Props) {
-  const total = requerimientos.length
+const MONEDA_PRE: Record<string, string> = { SOLES: 'S/', DOLARES: '$', EUROS: '€' }
+const FORMA_LABEL: Record<string, string> = {
+  CREDITO: 'Crédito', FACTORING: 'Factoring',
+  FACTURA_NEGOCIABLE: 'Factura negociable', LETRA: 'Letra',
+}
+
+export function FacturasVencidasEmail({ facturas, appUrl = 'http://localhost:3000' }: Props) {
+  const total = facturas.length
 
   return (
     <Tailwind>
@@ -37,10 +46,10 @@ export function RequerimientosPendientesEmail({ requerimientos, appUrl = 'http:/
         </Head>
 
         <Body className="bg-[#f0ede8] m-0 py-8 font-sans">
-          <Container className="max-w-[560px] mx-auto bg-white rounded-xl overflow-hidden border border-black/8">
+          <Container className="max-w-[580px] mx-auto bg-white rounded-xl overflow-hidden border border-black/8">
 
-            {/* Header — rojo de alerta */}
-            <Section className="bg-red-600 px-8 py-5">
+            {/* Header — ámbar de advertencia */}
+            <Section className="bg-amber-700 px-8 py-5">
               <Text className="text-white text-[13px] font-bold tracking-[1.5px] m-0">
                 SITRALOGFRU
               </Text>
@@ -49,92 +58,87 @@ export function RequerimientosPendientesEmail({ requerimientos, appUrl = 'http:/
             {/* Content */}
             <Section className="px-8 pt-8 pb-6">
               <Heading className="text-[#1a1a18] text-[20px] font-bold tracking-tight m-0 mb-3">
-                Requerimientos Pendientes de Atención
+                Facturas Vencidas sin pago Generado
               </Heading>
               <Text className="text-[#6b6b65] text-sm leading-relaxed m-0 mb-5">
-                Se han detectado{' '}
-                <strong>{total} requerimiento{total !== 1 ? 's' : ''}</strong>{' '}
-                que no {total !== 1 ? 'han sido atendidos' : 'ha sido atendido'} en{' '}
-                {total !== 1 ? 'sus fechas estimadas' : 'su fecha estimada'} de atención.
-                Se requiere <strong>atención y revisión inmediata.</strong>
+                Aviso de atención y revisión inmediata de{' '}
+                <strong>{total} factura{total !== 1 ? 's' : ''}</strong>{' '}
+                pendiente{total !== 1 ? 's' : ''} de registro contable o pagos por realizar.
               </Text>
 
-              {/* Lista de requerimientos */}
-              {requerimientos.map((r, i) => (
+              {/* Lista de facturas */}
+              {facturas.map((f, i) => (
                 <Section
-                  key={r.id}
+                  key={f.id}
                   className={`py-4 ${i > 0 ? 'border-t border-black/8' : ''}`}
                 >
-                  {/* ID + badge prioridad */}
+                  {/* N° factura + días vencida */}
                   <Row className="mb-2">
                     <Column>
-                      <Text className="text-[12px] font-bold text-[#1a1a18] font-mono m-0">
-                        REQ-{String(r.id).padStart(4, '0')}
+                      <Text className="text-[13px] font-bold text-[#1a1a18] font-mono m-0">
+                        {f.serie}-{f.numero}
                       </Text>
                     </Column>
                     <Column className="text-right">
-                      <Text
-                        className={`text-[10px] font-bold px-2 py-1 rounded m-0 ${
-                          r.prioridad === 'ALTA'
-                            ? 'text-red-600 bg-red-50'
-                            : 'text-orange-500 bg-orange-50'
-                        }`}
-                      >
-                        {r.prioridad === 'ALTA' ? '⚠ ALTA' : 'MEDIA'}
+                      <Text className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-1 rounded m-0">
+                        {f.diasVencida} día{f.diasVencida !== 1 ? 's' : ''} vencida
                       </Text>
                     </Column>
                   </Row>
 
-                  {/* Área + Responsable */}
+                  {/* Proveedor + Vencimiento */}
                   <Row className="mb-2">
                     <Column>
                       <Text className="text-[10px] font-semibold text-[#9e9e96] uppercase tracking-[0.6px] m-0 mb-0.5">
-                        Área
+                        Proveedor
                       </Text>
                       <Text className="text-[13px] text-[#1a1a18] m-0">
-                        {r.area}
+                        {f.proveedor}
                       </Text>
                     </Column>
                     <Column>
                       <Text className="text-[10px] font-semibold text-[#9e9e96] uppercase tracking-[0.6px] m-0 mb-0.5">
-                        Responsable
+                        Fecha vencimiento
                       </Text>
-                      <Text className="text-[13px] text-[#1a1a18] m-0">
-                        {r.responsable}
+                      <Text className="text-[13px] font-semibold text-amber-700 m-0">
+                        {format(new Date(f.fechaVencimiento), 'dd/MM/yyyy')}
                       </Text>
                     </Column>
                   </Row>
 
-                  {/* Días retraso + Fecha solicitud */}
+                  {/* Monto + Forma pago */}
                   <Row className="mb-2">
                     <Column>
                       <Text className="text-[10px] font-semibold text-[#9e9e96] uppercase tracking-[0.6px] m-0 mb-0.5">
-                        Días de retraso
+                        Monto a pagar
                       </Text>
-                      <Text className="text-[13px] font-bold text-red-600 m-0">
-                        {r.diasRetraso} día{r.diasRetraso !== 1 ? 's' : ''}
+                      <Text className="text-[14px] font-bold text-[#1a1a18] m-0">
+                        {MONEDA_PRE[f.moneda] ?? ''}{' '}
+                        {f.montoNeto.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
                       </Text>
                     </Column>
                     <Column>
                       <Text className="text-[10px] font-semibold text-[#9e9e96] uppercase tracking-[0.6px] m-0 mb-0.5">
-                        Fecha solicitud
+                        Forma de pago
                       </Text>
                       <Text className="text-[13px] text-[#1a1a18] m-0">
-                        {format(new Date(r.fechaSolicitud), 'dd/MM/yyyy')}
+                        {f.formaPago ? FORMA_LABEL[f.formaPago] : '— Sin asignar'}
                       </Text>
                     </Column>
                   </Row>
 
-                  {/* Descripción */}
+                  {/* Registro contable */}
                   <Row>
                     <Column>
                       <Text className="text-[10px] font-semibold text-[#9e9e96] uppercase tracking-[0.6px] m-0 mb-0.5">
-                        Descripción
+                        Registro contable
                       </Text>
-                      <Text className="text-[12px] text-[#6b6b65] italic leading-relaxed m-0">
-                        {r.descripcion.length > 200
-                          ? `${r.descripcion.slice(0, 200)}...`
-                          : r.descripcion}
+                      <Text
+                        className={`text-[12px] font-semibold m-0 ${
+                          f.registradoContable ? 'text-green-600' : 'text-red-600'
+                        }`}
+                      >
+                        {f.registradoContable ? '✓ Registrado' : '✗ Pendiente de registro'}
                       </Text>
                     </Column>
                   </Row>
@@ -145,10 +149,10 @@ export function RequerimientosPendientesEmail({ requerimientos, appUrl = 'http:/
 
               <Section className="text-center">
                 <a
-                  href={`${appUrl}/requerimientos`}
+                  href={`${appUrl}/comprobantes`}
                   className="inline-block bg-[#1a1a18] text-white text-[13px] font-semibold px-6 py-3 rounded-md no-underline"
                 >
-                  Ver requerimientos en el sistema
+                  Ver comprobantes en el sistema
                 </a>
               </Section>
             </Section>
