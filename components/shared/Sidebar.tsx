@@ -8,7 +8,6 @@ import {
   IconLayoutDashboard,
   IconFileText,
   IconClipboardList,
-  IconChartBar,
   IconShieldCheck,
   IconSettings,
   IconLogout,
@@ -19,12 +18,11 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 
 const NAV = [
   { label: 'Principal', items: [
-    { href: '/indicadores',    label: 'Dashboard',       icon: IconLayoutDashboard },
+    { href: '/dashboard',      label: 'Dashboard',       icon: IconLayoutDashboard },
   ]},
   { label: 'Módulos', items: [
     { href: '/comprobantes',   label: 'Comprobantes',    icon: IconFileText },
     { href: '/requerimientos', label: 'Requerimientos',  icon: IconClipboardList },
-    { href: '/indicadores',    label: 'Indicadores',     icon: IconChartBar },
     { href: '/auditoria',      label: 'Auditorías',      icon: IconShieldCheck },
     { href: '/configuracion',  label: 'Configuración',   icon: IconSettings },
   ]},
@@ -79,9 +77,9 @@ export function Sidebar({ user }: SidebarProps) {
               {section.label}
             </div>
             {section.items.map(({ href, label, icon: Icon }) => {
-              const active = pathname.startsWith(href) && href !== '/indicadores'
+              const active = pathname.startsWith(href) && href !== '/dashboard'
                 ? true
-                : pathname === href || (href === '/indicadores' && (pathname === '/indicadores' || pathname === '/'))
+                : pathname === href || (href === '/dashboard' && (pathname === '/dashboard' || pathname === '/'))
 
               return (
                 <Link

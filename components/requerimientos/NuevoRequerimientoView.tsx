@@ -73,6 +73,7 @@ function FormularioDatos({
   tipo, setTipo,
   fecha, setFecha,
   desc, setDesc,
+  fechaEstimada, setFechaEstimada,
   error, isPending,
   onGuardar,
 }: {
@@ -90,6 +91,8 @@ function FormularioDatos({
   setFecha:            (v: string) => void
   desc:                string
   setDesc:             (v: string) => void
+  fechaEstimada:       string
+  setFechaEstimada:    (v: string) => void
   error:               string
   isPending:           boolean
   onGuardar:           () => void
@@ -162,6 +165,14 @@ function FormularioDatos({
             <option value="SERVICIO">Servicio</option>
           </select>
         </div>
+
+        <div className="fi">
+          <label>
+            Fecha estimada de atención{' '}
+            <span style={{ color: 'var(--t3)', fontWeight: 400, textTransform: 'none' }}>(opcional)</span>
+          </label>
+          <input type="date" value={fechaEstimada} onChange={(e) => setFechaEstimada(e.target.value)} />
+        </div>
       </div>
 
       <div className="fi" style={{ marginBottom: 14 }}>
@@ -230,6 +241,7 @@ export function NuevoRequerimientoView({ areas, tarjetasRapidas }: { areas: Area
   const [tipo,          setTipo]          = useState<TipoRequerimiento>('COMPRA')
   const [desc,          setDesc]          = useState('')
   const [fecha,         setFecha]         = useState(format(new Date(), 'yyyy-MM-dd'))
+  const [fechaEstimada, setFechaEstimada] = useState('')
   const [error,         setError]         = useState('')
 
   function onSeleccionar(newAreaId: number, newResponsableId: number, correo: string) {
@@ -260,7 +272,7 @@ export function NuevoRequerimientoView({ areas, tarjetasRapidas }: { areas: Area
     }
     setError('')
     startTransition(async () => {
-      const res = await crearRequerimiento({ fechaSolicitud: fecha, areaId, responsableId, prioridad, tipo, descripcion: desc.trim() })
+      const res = await crearRequerimiento({ fechaSolicitud: fecha, areaId, responsableId, prioridad, tipo, descripcion: desc.trim(), fechaEstimadaAtencion: fechaEstimada || undefined })
       if (!res.ok) { setError(res.error); return }
       router.push('/requerimientos')
       router.refresh()
@@ -286,6 +298,7 @@ export function NuevoRequerimientoView({ areas, tarjetasRapidas }: { areas: Area
         tipo={tipo}                   setTipo={setTipo}
         fecha={fecha}                 setFecha={setFecha}
         desc={desc}                   setDesc={setDesc}
+        fechaEstimada={fechaEstimada} setFechaEstimada={setFechaEstimada}
         error={error}
         isPending={isPending}
         onGuardar={guardar}

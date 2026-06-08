@@ -1,12 +1,14 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useTransition } from 'react'
 import Link from 'next/link'
 import { format } from 'date-fns'
 import {
   IconAlertTriangle, IconSearch, IconEye, IconPencil, IconTrash,
   IconFileCode, IconRotate, IconChecks, IconX, IconCircleCheck,
 } from '@tabler/icons-react'
+import { eliminarFactura, toggleRegistroContable } from '@/lib/actions/comprobantes'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -82,16 +84,28 @@ function ToggleContable({ factura, onToggle }: {
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 export function ComprobantesView({ facturas: initial }: { facturas: FacturaRow[] }) {
-  const [facturas, setFacturas]     = useState(initial)
-  const [selected, setSelected]     = useState<number[]>([])
-  const [busqueda, setBusqueda]     = useState('')
-  const [filtroEstado, setFiltroEstado] = useState('')
+  const [, startTransition]          = useTransition()
+  const [facturas, setFacturas]      = useState(initial)
+  const [selected, setSelected]      = useState<number[]>([])
 
-  const vencidas = facturas.filter((f) => f.estado === 'VENCIDA')
+  // Filtros
+  const [busqueda,       setBusqueda]       = useState('')
+  const [filtroEstado,   setFiltroEstado]   = useState('')
+  const [filtroDesde,    setFiltroDesde]    = useState('')
+  const [filtroHasta,    setFiltroHasta]    = useState('')
+  const [filtroSemana,   setFiltroSemana]   = useState('')
+  const [filtroContable, setFiltroContable] = useState('')
+
+  // Eliminar
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [confirmId,   setConfirmId]   = useState<number | null>(null)
+
+  const vencidas   = facturas.filter((f) => f.estado === 'VENCIDA')
   const sinContable = facturas.filter((f) => !f.registradoContable).length
 
   const filtradas = useMemo(() => {
     let r = facturas
+
     if (busqueda) {
       const q = busqueda.toLowerCase()
       r = r.filter((f) =>
@@ -100,36 +114,72 @@ export function ComprobantesView({ facturas: initial }: { facturas: FacturaRow[]
       )
     }
     if (filtroEstado) r = r.filter((f) => f.estado === filtroEstado)
+    if (filtroDesde)  r = r.filter((f) => new Date(f.fechaVencimiento) >= new Date(filtroDesde))
+    if (filtroHasta) {
+      const h = new Date(filtroHasta); h.setHours(23, 59, 59, 999)
+      r = r.filter((f) => new Date(f.fechaVencimiento) <= h)
+    }
+    if (filtroSemana) {
+      const sem = parseInt(filtroSemana)
+      if (!isNaN(sem)) r = r.filter((f) => f.semanaPago === sem)
+    }
+    if (filtroContable === 'pendiente')   r = r.filter((f) => !f.registradoContable)
+    if (filtroContable === 'registrado')  r = r.filter((f) => f.registradoContable)
+
     return r
-  }, [facturas, busqueda, filtroEstado])
+  }, [facturas, busqueda, filtroEstado, filtroDesde, filtroHasta, filtroSemana, filtroContable])
+
+  function limpiarFiltros() {
+    setBusqueda(''); setFiltroEstado(''); setFiltroDesde('')
+    setFiltroHasta(''); setFiltroSemana(''); setFiltroContable('')
+  }
 
   function toggleContable(id: number) {
-    setFacturas((prev) => prev.map((f) =>
-      f.id === id
-        ? {
-            ...f,
-            registradoContable: !f.registradoContable,
-            fechaRegistroContable: !f.registradoContable ? new Date() : null,
-          }
-        : f
+    const f = facturas.find((x) => x.id === id)
+    if (!f) return
+    const newVal = !f.registradoContable
+    setFacturas((prev) => prev.map((x) =>
+      x.id === id
+        ? { ...x, registradoContable: newVal, fechaRegistroContable: newVal ? new Date() : null }
+        : x
     ))
+    startTransition(() => { toggleRegistroContable(id, newVal) })
   }
 
   function toggleSel(id: number) {
-    setSelected((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    )
+    setSelected((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id])
   }
 
   function registrarSeleccionadas() {
     const hoy = new Date()
+    const toRegister = selected.filter((id) => !facturas.find((f) => f.id === id)?.registradoContable)
     setFacturas((prev) => prev.map((f) =>
       selected.includes(f.id) && !f.registradoContable
         ? { ...f, registradoContable: true, fechaRegistroContable: hoy }
         : f
     ))
     setSelected([])
+    startTransition(async () => {
+      await Promise.all(toRegister.map((id) => toggleRegistroContable(id, true)))
+    })
   }
+
+  function pedirConfirmacion(id: number) {
+    setConfirmId(id); setConfirmOpen(true)
+  }
+
+  function handleEliminar() {
+    if (!confirmId) return
+    const id = confirmId
+    setConfirmOpen(false)
+    setConfirmId(null)
+    startTransition(async () => {
+      const res = await eliminarFactura(id)
+      if (res.ok) setFacturas((prev) => prev.filter((f) => f.id !== id))
+    })
+  }
+
+  const hayFiltros = busqueda || filtroEstado || filtroDesde || filtroHasta || filtroSemana || filtroContable
 
   return (
     <>
@@ -149,24 +199,19 @@ export function ComprobantesView({ facturas: initial }: { facturas: FacturaRow[]
         <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <div className="fg">
             <label>Proveedor / N° factura</label>
-            <input
-              type="text"
-              placeholder="Buscar..."
-              value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
-            />
+            <input type="text" placeholder="Buscar..." value={busqueda} onChange={(e) => setBusqueda(e.target.value)} />
           </div>
           <div className="fg" style={{ maxWidth: 130 }}>
             <label>Desde</label>
-            <input type="date" />
+            <input type="date" value={filtroDesde} onChange={(e) => setFiltroDesde(e.target.value)} />
           </div>
           <div className="fg" style={{ maxWidth: 130 }}>
             <label>Hasta</label>
-            <input type="date" />
+            <input type="date" value={filtroHasta} onChange={(e) => setFiltroHasta(e.target.value)} />
           </div>
-          <div className="fg" style={{ maxWidth: 130 }}>
+          <div className="fg" style={{ maxWidth: 110 }}>
             <label>Semana pago</label>
-            <input type="text" placeholder="Sem. 20" />
+            <input type="number" placeholder="20" min={1} max={53} value={filtroSemana} onChange={(e) => setFiltroSemana(e.target.value)} />
           </div>
           <div className="fg" style={{ maxWidth: 140 }}>
             <label>Estado</label>
@@ -180,16 +225,23 @@ export function ComprobantesView({ facturas: initial }: { facturas: FacturaRow[]
           </div>
           <div className="fg" style={{ maxWidth: 150 }}>
             <label>Reg. contable</label>
-            <select>
+            <select value={filtroContable} onChange={(e) => setFiltroContable(e.target.value)}>
               <option value="">Todos</option>
               <option value="pendiente">Pendiente</option>
               <option value="registrado">Registrado</option>
             </select>
           </div>
-          <button className="btn btn-p">
-            <IconSearch size={13} /> Filtrar
-          </button>
+          {hayFiltros && (
+            <button className="btn" onClick={limpiarFiltros}>
+              <IconSearch size={13} /> Limpiar
+            </button>
+          )}
         </div>
+        {hayFiltros && filtradas.length !== facturas.length && (
+          <div style={{ fontSize: 12, color: 'var(--t3)', marginTop: 8 }}>
+            Mostrando {filtradas.length} de {facturas.length} facturas
+          </div>
+        )}
       </div>
 
       {/* Métricas */}
@@ -207,7 +259,7 @@ export function ComprobantesView({ facturas: initial }: { facturas: FacturaRow[]
           <div className="mc-value a">{sinContable}</div>
         </div>
         <div className="mc">
-          <div className="mc-label">Pagadas este mes</div>
+          <div className="mc-label">Pagadas</div>
           <div className="mc-value g">{facturas.filter((f) => f.estado === 'PAGADA').length}</div>
         </div>
       </div>
@@ -224,11 +276,7 @@ export function ComprobantesView({ facturas: initial }: { facturas: FacturaRow[]
           <span>
             {selected.length} factura{selected.length > 1 ? 's' : ''} seleccionada{selected.length > 1 ? 's' : ''}
           </span>
-          <button
-            className="btn btn-sm btn-g"
-            style={{ marginLeft: 'auto' }}
-            onClick={registrarSeleccionadas}
-          >
+          <button className="btn btn-sm btn-g" style={{ marginLeft: 'auto' }} onClick={registrarSeleccionadas}>
             <IconCircleCheck size={12} /> Registrar contablemente
           </button>
           <button className="btn btn-sm" onClick={() => setSelected([])}>
@@ -240,8 +288,7 @@ export function ComprobantesView({ facturas: initial }: { facturas: FacturaRow[]
       {/* Tabla */}
       <div className="tc">
         <div style={{
-          padding: '11px 15px',
-          borderBottom: '1px solid var(--bl)',
+          padding: '11px 15px', borderBottom: '1px solid var(--bl)',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         }}>
           <span style={{ fontSize: 13, fontWeight: 600 }}>Facturas registradas</span>
@@ -328,22 +375,21 @@ export function ComprobantesView({ facturas: initial }: { facturas: FacturaRow[]
                     </span>
                   </td>
                   <td>
-                    <ToggleContable
-                      factura={f}
-                      onToggle={() => toggleContable(f.id)}
-                    />
+                    <ToggleContable factura={f} onToggle={() => toggleContable(f.id)} />
                   </td>
                   <td>
                     <div style={{ display: 'flex', gap: 4 }}>
                       <Link href={`/comprobantes/${f.id}`}>
-                        <button className="ib" title="Ver detalle">
-                          <IconEye size={13} />
-                        </button>
+                        <button className="ib" title="Ver detalle"><IconEye size={13} /></button>
                       </Link>
-                      <button className="ib" title="Editar">
-                        <IconPencil size={13} />
-                      </button>
-                      <button className="ib ib-danger" title="Eliminar">
+                      <Link href={`/comprobantes/${f.id}`}>
+                        <button className="ib" title="Editar"><IconPencil size={13} /></button>
+                      </Link>
+                      <button
+                        className="ib ib-danger"
+                        title="Eliminar"
+                        onClick={() => pedirConfirmacion(f.id)}
+                      >
                         <IconTrash size={13} />
                       </button>
                     </div>
@@ -354,6 +400,18 @@ export function ComprobantesView({ facturas: initial }: { facturas: FacturaRow[]
           </table>
         </div>
       </div>
+
+      {/* Confirm eliminar */}
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Eliminar factura"
+        description="¿Estás seguro que deseas eliminar esta factura? Se eliminarán también las notas de crédito y débito asociadas. Esta acción no se puede deshacer."
+        confirmLabel="Eliminar"
+        cancelLabel="Cancelar"
+        variant="danger"
+        onConfirm={handleEliminar}
+      />
     </>
   )
 }

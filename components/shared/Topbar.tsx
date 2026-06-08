@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation'
 import { IconBell } from '@tabler/icons-react'
 
 const TITLES: Record<string, string> = {
-  '/indicadores':    'Dashboard · Indicadores',
+  '/dashboard':      'Dashboard',
   '/comprobantes':   'Módulo de Comprobantes',
   '/requerimientos': 'Módulo de Requerimientos',
   '/auditoria':      'Módulo de Auditorías',

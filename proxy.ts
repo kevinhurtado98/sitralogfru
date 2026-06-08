@@ -11,14 +11,14 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith('/comprobantes') ||
     pathname.startsWith('/requerimientos') ||
     pathname.startsWith('/auditoria') ||
-    pathname.startsWith('/indicadores')
+    pathname.startsWith('/dashboard')
 
   if (isDashboardRoute && !session) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
   if (isAuthRoute && session) {
-    return NextResponse.redirect(new URL('/indicadores', request.url))
+    return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
   return NextResponse.next()

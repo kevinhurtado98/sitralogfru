@@ -55,5 +55,5 @@ export async function login(_prev: FormState, formData: FormData): Promise<FormS
     return { message: 'Error del servidor. Intenta de nuevo.' }
   }
 
-  redirect('/indicadores')
+  redirect('/dashboard')
 }

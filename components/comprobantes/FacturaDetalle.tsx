@@ -1,10 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { format } from 'date-fns'
-import { IconArrowLeft, IconDeviceFloppy, IconCircleCheck, IconFileMinus, IconFilePlus } from '@tabler/icons-react'
+import { IconArrowLeft, IconDeviceFloppy, IconCircleCheck, IconFileMinus, IconFilePlus, IconCheck } from '@tabler/icons-react'
 import type { TipoFactura, FormaPago } from '@/lib/types'
+import { actualizarFactura, marcarComoPagada } from '@/lib/actions/comprobantes'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -39,11 +41,15 @@ const ESTADO_BADGE: Record<string, string> = {
   POR_VENCER: 'badge-red', PENDIENTE: 'badge-amber', PAGADA: 'badge-green', VENCIDA: 'badge-red',
 }
 const ESTADO_LABEL: Record<string, string> = {
-  POR_VENCER: 'Por vencer', PENDIENTE: 'Pendiente', PAGADA: 'Pagada', VENCIDA: 'Vencida',
+  POR_VENCER: 'Por vencer', PENDIENTE: 'Pendiente', PAGADA: 'Pagada', Vencida: 'Vencida', VENCIDA: 'Vencida',
 }
 
 function fmt(v: Date | string | null | undefined) {
   return v ? format(new Date(v), 'dd/MM/yyyy') : '—'
+}
+
+function fmtInput(v: Date | string | null | undefined) {
+  return v ? format(new Date(v), 'yyyy-MM-dd') : ''
 }
 
 // ─── Field read-only ─────────────────────────────────────────────────────────
@@ -69,10 +75,59 @@ function Field({ label, value, mono, color, big }: {
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export function FacturaDetalle({ factura: f }: { factura: FacturaFull }) {
-  const [tipo,       setTipo]       = useState<TipoFactura>(f.tipo as TipoFactura)
-  const [formaPago,  setFormaPago]  = useState<FormaPago | ''>((f.formaPago ?? '') as FormaPago | '')
-  const [ordenCompra, setOrdenCompra] = useState(f.ordenCompra ?? '')
-  const [notas,      setNotas]      = useState(f.notas ?? '')
+  const router = useRouter()
+  const [isPending, startTransition] = useTransition()
+
+  const [tipo,                  setTipo]                  = useState<TipoFactura>(f.tipo as TipoFactura)
+  const [formaPago,             setFormaPago]             = useState<FormaPago | ''>((f.formaPago ?? '') as FormaPago | '')
+  const [ordenCompra,           setOrdenCompra]           = useState(f.ordenCompra ?? '')
+  const [notas,                 setNotas]                 = useState(f.notas ?? '')
+  const [registradoContable,    setRegistradoContable]    = useState(f.registradoContable)
+  const [fechaRegistroContable, setFechaRegistroContable] = useState(fmtInput(f.fechaRegistroContable))
+  const [estado,                setEstado]                = useState(f.estado)
+  const [feedback,              setFeedback]              = useState<{ ok: boolean; msg: string } | null>(null)
+
+  function handleGuardar() {
+    setFeedback(null)
+    startTransition(async () => {
+      const res = await actualizarFactura(f.id, {
+        tipo,
+        formaPago:             formaPago || null,
+        ordenCompra,
+        notas,
+        registradoContable,
+        fechaRegistroContable: registradoContable ? (fechaRegistroContable || null) : null,
+      })
+      if (res.ok) {
+        setFeedback({ ok: true, msg: 'Cambios guardados correctamente.' })
+      } else {
+        setFeedback({ ok: false, msg: res.error })
+      }
+    })
+  }
+
+  function handleMarcarPagada() {
+    setFeedback(null)
+    startTransition(async () => {
+      const res = await marcarComoPagada(f.id)
+      if (res.ok) {
+        setEstado('PAGADA')
+        setFeedback({ ok: true, msg: 'Factura marcada como pagada.' })
+        router.refresh()
+      } else {
+        setFeedback({ ok: false, msg: res.error })
+      }
+    })
+  }
+
+  function handleToggleContable() {
+    const newVal = !registradoContable
+    setRegistradoContable(newVal)
+    if (newVal && !fechaRegistroContable) {
+      setFechaRegistroContable(format(new Date(), 'yyyy-MM-dd'))
+    }
+    if (!newVal) setFechaRegistroContable('')
+  }
 
   return (
     <div>
@@ -85,10 +140,22 @@ export function FacturaDetalle({ factura: f }: { factura: FacturaFull }) {
         <span style={{ fontSize: 13, color: 'var(--t2)' }}>
           Factura <span style={{ fontFamily: 'var(--fm)' }}>{f.serie}-{f.numero}</span> · {f.proveedor}
         </span>
-        <span className={`badge ${ESTADO_BADGE[f.estado]}`} style={{ marginLeft: 'auto' }}>
-          {ESTADO_LABEL[f.estado]}
+        <span className={`badge ${ESTADO_BADGE[estado]}`} style={{ marginLeft: 'auto' }}>
+          {ESTADO_LABEL[estado] ?? estado}
         </span>
       </div>
+
+      {/* Feedback */}
+      {feedback && (
+        <div style={{
+          padding: '8px 12px', borderRadius: 'var(--r)', fontSize: 13, marginBottom: 14,
+          background: feedback.ok ? '#f0fdf4' : '#fef2f2',
+          color:      feedback.ok ? '#16a34a' : 'var(--red)',
+          border:     `1px solid ${feedback.ok ? '#bbf7d0' : '#fecaca'}`,
+        }}>
+          {feedback.msg}
+        </div>
+      )}
 
       {/* Datos importados */}
       <div className="dc">
@@ -102,7 +169,7 @@ export function FacturaDetalle({ factura: f }: { factura: FacturaFull }) {
           <Field
             label="Fecha vencimiento"
             value={fmt(f.fechaVencimiento)}
-            color={f.estado !== 'PAGADA' ? 'var(--amber)' : undefined}
+            color={estado !== 'PAGADA' ? 'var(--amber)' : undefined}
           />
           <Field label="Monto total"    value={`${MONEDA_PRE[f.moneda]} ${f.monto.toFixed(2)}`} />
           <Field
@@ -130,6 +197,7 @@ export function FacturaDetalle({ factura: f }: { factura: FacturaFull }) {
       <div className="dc">
         <div className="ss">Datos de registro manual</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
+
           <div className="fi">
             <label>Tipo de compra</label>
             <select value={tipo} onChange={(e) => setTipo(e.target.value as TipoFactura)}>
@@ -137,6 +205,7 @@ export function FacturaDetalle({ factura: f }: { factura: FacturaFull }) {
               <option value="SERVICIO">Factura de Servicio</option>
             </select>
           </div>
+
           <div className="fi">
             <label>Forma de pago</label>
             <select value={formaPago} onChange={(e) => setFormaPago(e.target.value as FormaPago | '')}>
@@ -147,6 +216,7 @@ export function FacturaDetalle({ factura: f }: { factura: FacturaFull }) {
               <option value="LETRA">Letra</option>
             </select>
           </div>
+
           <div className="fi">
             <label>N° Orden de compra (OCO)</label>
             <input
@@ -157,6 +227,7 @@ export function FacturaDetalle({ factura: f }: { factura: FacturaFull }) {
               style={{ fontFamily: 'var(--fm)' }}
             />
           </div>
+
           <div className="fi">
             <label>Semana de pago</label>
             <div style={{ paddingTop: 6 }}>
@@ -169,6 +240,33 @@ export function FacturaDetalle({ factura: f }: { factura: FacturaFull }) {
               )}
             </div>
           </div>
+
+          {/* Registro contable */}
+          <div className="fi">
+            <label>Fecha registro contable</label>
+            <input
+              type="date"
+              value={fechaRegistroContable}
+              onChange={(e) => { setFechaRegistroContable(e.target.value); if (e.target.value) setRegistradoContable(true) }}
+            />
+          </div>
+
+          <div className="fi">
+            <label>Registro contable</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingTop: 6 }}>
+              <div
+                className={`ctog-track${registradoContable ? ' on' : ''}`}
+                onClick={handleToggleContable}
+                style={{ cursor: 'pointer' }}
+              >
+                <div className="ctog-knob" />
+              </div>
+              <span style={{ fontSize: 12, color: registradoContable ? '#16a34a' : 'var(--t3)' }}>
+                {registradoContable ? <><IconCheck size={11} style={{ display: 'inline', verticalAlign: 'middle' }} /> Registrado</> : '✗ Pendiente'}
+              </span>
+            </div>
+          </div>
+
           <div className="fi" style={{ gridColumn: '1 / -1' }}>
             <label>Notas internas</label>
             <textarea
@@ -229,9 +327,23 @@ export function FacturaDetalle({ factura: f }: { factura: FacturaFull }) {
 
       {/* Acciones */}
       <div style={{ display: 'flex', gap: 9, justifyContent: 'flex-end', paddingBottom: 6 }}>
-        <button className="btn"><IconDeviceFloppy size={13} /> Guardar cambios</button>
-        <button className="btn btn-g"><IconCircleCheck size={13} /> Marcar como pagada</button>
+        <button
+          className="btn"
+          onClick={handleGuardar}
+          disabled={isPending}
+        >
+          <IconDeviceFloppy size={13} /> {isPending ? 'Guardando...' : 'Guardar cambios'}
+        </button>
+        <button
+          className="btn btn-g"
+          onClick={handleMarcarPagada}
+          disabled={!registradoContable || estado === 'PAGADA' || isPending}
+          title={!registradoContable ? 'Registra contablemente antes de marcar como pagada' : undefined}
+        >
+          <IconCircleCheck size={13} /> {estado === 'PAGADA' ? '✓ Pagada' : 'Marcar como pagada'}
+        </button>
       </div>
+
     </div>
   )
 }
