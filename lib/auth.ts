@@ -1,72 +1,75 @@
-import NextAuth from 'next-auth'
-import Credentials from 'next-auth/providers/credentials'
-import bcrypt from 'bcryptjs'
-import { z } from 'zod'
-import { prisma } from '@/lib/prisma'
+import NextAuth from "next-auth";
+import Credentials from "next-auth/providers/credentials";
+import bcrypt from "bcryptjs";
+import { z } from "zod";
+import { prisma } from "@/lib/prisma";
 
 const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
-})
+});
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  session: { strategy: 'jwt', maxAge: 8 * 60 * 60 },
+  session: { strategy: "jwt", maxAge: 8 * 60 * 60 },
   pages: {
-    signIn: '/login',
+    signIn: "/login",
   },
   cookies: {
     sessionToken: {
-      name: 'next-auth.session-token',
+      name: "next-auth.session-token",
       options: {
         httpOnly: true,
-        sameSite: 'lax' as const,
-        path: '/',
-        secure: process.env.NODE_ENV === 'production',
+        sameSite: "lax" as const,
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
       },
     },
   },
   providers: [
     Credentials({
       credentials: {
-        email:    { label: 'Correo',     type: 'email'    },
-        password: { label: 'Contraseña', type: 'password' },
+        email: { label: "Correo", type: "email" },
+        password: { label: "Contraseña", type: "password" },
       },
       async authorize(credentials) {
-        const parsed = loginSchema.safeParse(credentials)
-        if (!parsed.success) return null
+        const parsed = loginSchema.safeParse(credentials);
+        if (!parsed.success) return null;
 
         const user = await prisma.user.findUnique({
-          where:   { email: parsed.data.email },
+          where: { email: parsed.data.email },
           include: { rol: { select: { nombre: true } } },
-        })
-        if (!user || !user.activo) return null
+        });
+        if (!user || !user.activo) return null;
 
-        const passwordOk = await bcrypt.compare(parsed.data.password, user.password)
-        if (!passwordOk) return null
+        const passwordOk = await bcrypt.compare(
+          parsed.data.password,
+          user.password,
+        );
+        if (!passwordOk) return null;
 
         return {
-          id:    String(user.id),
+          id: String(user.id),
           email: user.email,
-          name:  `${user.nombres} ${user.apellidos}`.trim(),
-          role:  user.rol.nombre,
-        }
+          name: `${user.nombres} ${user.apellidos}`.trim(),
+          role: user.rol.nombre,
+        };
       },
     }),
   ],
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.id   = user.id
-        token.role = (user as { role?: string }).role
+        token.id = user.id;
+        token.role = (user as { role?: string }).role;
       }
-      return token
+      return token;
     },
     async session({ session, token }) {
       if (token) {
-        session.user.id   = token.id as string
-        session.user.role = token.role as string
+        session.user.id = token.id as string;
+        session.user.role = token.role as string;
       }
-      return session
+      return session;
     },
   },
-})
+});

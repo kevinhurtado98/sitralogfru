@@ -1,37 +1,42 @@
-import { prisma } from '@/lib/prisma'
-import { notFound } from 'next/navigation'
-import { RequerimientoDetalle } from '@/components/requerimientos/RequerimientoDetalle'
+import { prisma } from "@/lib/prisma";
+import { notFound } from "next/navigation";
+import { RequerimientoDetalle } from "@/components/requerimientos/RequerimientoDetalle";
 
 interface Props {
-  params: Promise<{ id: string }>
+  params: Promise<{ id: string }>;
 }
 
 export default async function RequerimientoDetallePage({ params }: Props) {
-  const { id } = await params
+  const { id } = await params;
 
   const raw = await prisma.requerimiento.findUnique({
     where: { id: parseInt(id) },
     include: {
-      area:        { select: { nombre: true } },
+      area: { select: { nombre: true } },
       responsable: { select: { nombres: true, apellidos: true, correo: true } },
-      creadoPor:   { select: { nombres: true, apellidos: true } },
+      creadoPor: { select: { nombres: true, apellidos: true } },
       atendidoPor: { select: { nombres: true, apellidos: true } },
     },
-  })
-  if (!raw) notFound()
+  });
+  if (!raw) notFound();
 
   const req = {
     ...raw,
-    area:        raw.area.nombre,
+    area: raw.area.nombre,
     responsable: {
       nombre: `${raw.responsable.nombres} ${raw.responsable.apellidos}`.trim(),
       correo: raw.responsable.correo,
     },
-    creadoPor:   { nombre: `${raw.creadoPor.nombres} ${raw.creadoPor.apellidos}`.trim() },
+    creadoPor: {
+      nombre: `${raw.creadoPor.nombres} ${raw.creadoPor.apellidos}`.trim(),
+    },
     atendidoPor: raw.atendidoPor
-      ? { nombre: `${raw.atendidoPor.nombres} ${raw.atendidoPor.apellidos}`.trim() }
+      ? {
+          nombre:
+            `${raw.atendidoPor.nombres} ${raw.atendidoPor.apellidos}`.trim(),
+        }
       : null,
-  }
+  };
 
-  return <RequerimientoDetalle requerimiento={req} />
+  return <RequerimientoDetalle requerimiento={req} />;
 }
