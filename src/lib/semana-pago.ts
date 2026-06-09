@@ -6,12 +6,12 @@ import {
   nextFriday,
   isFriday,
   startOfDay,
-} from 'date-fns'
+} from "date-fns";
 
 export interface SemanaPago {
-  semana: number
-  año: number
-  viernesPago: Date
+  semana: number;
+  año: number;
+  viernesPago: Date;
 }
 
 /**
@@ -23,16 +23,16 @@ export interface SemanaPago {
  *   → semana de pago: 20 → viernes: 15/05/2026
  */
 export function calcularSemanaPago(fechaVencimiento: Date): SemanaPago {
-  const lunes = startOfISOWeek(fechaVencimiento)
+  const lunes = startOfISOWeek(fechaVencimiento);
   // Pagar la semana anterior: retroceder 7 días
-  const lunesSemanaAnterior = addDays(lunes, -7)
-  const viernesPago = addDays(lunesSemanaAnterior, 4)
+  const lunesSemanaAnterior = addDays(lunes, -7);
+  const viernesPago = addDays(lunesSemanaAnterior, 4);
 
   return {
     semana: getISOWeek(lunesSemanaAnterior),
     año: getYear(lunesSemanaAnterior),
     viernesPago: startOfDay(viernesPago),
-  }
+  };
 }
 
 /**
@@ -40,8 +40,8 @@ export function calcularSemanaPago(fechaVencimiento: Date): SemanaPago {
  * Si la fecha ya es viernes, devuelve esa misma fecha.
  */
 export function proximoViernes(fecha: Date): Date {
-  if (isFriday(fecha)) return startOfDay(fecha)
-  return startOfDay(nextFriday(fecha))
+  if (isFriday(fecha)) return startOfDay(fecha);
+  return startOfDay(nextFriday(fecha));
 }
 
 /**
@@ -49,9 +49,9 @@ export function proximoViernes(fecha: Date): Date {
  * Ej: "Semana 20 – Viernes 15/05/2026"
  */
 export function etiquetaSemanaPago(info: SemanaPago): string {
-  const d = info.viernesPago
-  const dd = String(d.getDate()).padStart(2, '0')
-  const mm = String(d.getMonth() + 1).padStart(2, '0')
-  const yyyy = d.getFullYear()
-  return `Semana ${info.semana} – Viernes ${dd}/${mm}/${yyyy}`
+  const d = info.viernesPago;
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  return `Semana ${info.semana} – Viernes ${dd}/${mm}/${yyyy}`;
 }

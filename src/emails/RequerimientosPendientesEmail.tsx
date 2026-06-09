@@ -1,27 +1,39 @@
-import { Tailwind } from '@react-email/tailwind'
+import { Tailwind } from "@react-email/tailwind";
 import {
-  Html, Head, Body, Container, Section,
-  Text, Heading, Hr, Row, Column, Font,
-} from '@react-email/components'
-import { format } from 'date-fns'
+  Html,
+  Head,
+  Body,
+  Container,
+  Section,
+  Text,
+  Heading,
+  Hr,
+  Row,
+  Column,
+  Font,
+} from "@react-email/components";
+import { format } from "date-fns";
 
 export interface RequerimientoEmailItem {
-  id:             number
-  area:           string
-  responsable:    string
-  prioridad:      string
-  diasRetraso:    number
-  descripcion:    string
-  fechaSolicitud: Date
+  id: number;
+  area: string;
+  responsable: string;
+  prioridad: string;
+  diasRetraso: number;
+  descripcion: string;
+  fechaSolicitud: Date;
 }
 
 interface Props {
-  requerimientos: RequerimientoEmailItem[]
-  appUrl?:        string
+  requerimientos: RequerimientoEmailItem[];
+  appUrl?: string;
 }
 
-export function RequerimientosPendientesEmail({ requerimientos, appUrl = 'http://localhost:3000' }: Props) {
-  const total = requerimientos.length
+export function RequerimientosPendientesEmail({
+  requerimientos,
+  appUrl = "http://localhost:3000",
+}: Props) {
+  const total = requerimientos.length;
 
   return (
     <Tailwind>
@@ -30,15 +42,17 @@ export function RequerimientosPendientesEmail({ requerimientos, appUrl = 'http:/
           <Font
             fontFamily="DM Sans"
             fallbackFontFamily="Arial"
-            webFont={{ url: 'https://fonts.gstatic.com/s/dmsans/v15/rP2Hp2ywxg089UriCZOIHQ.woff2', format: 'woff2' }}
+            webFont={{
+              url: "https://fonts.gstatic.com/s/dmsans/v15/rP2Hp2ywxg089UriCZOIHQ.woff2",
+              format: "woff2",
+            }}
             fontWeight={400}
             fontStyle="normal"
           />
         </Head>
 
         <Body className="bg-[#f0ede8] m-0 py-8 font-sans">
-          <Container className="max-w-[560px] mx-auto bg-white rounded-xl overflow-hidden border border-black/8">
-
+          <Container className="max-w-140 mx-auto bg-white rounded-xl overflow-hidden border border-black/8">
             {/* Header — rojo de alerta */}
             <Section className="bg-red-600 px-8 py-5">
               <Text className="text-white text-[13px] font-bold tracking-[1.5px] m-0">
@@ -52,35 +66,38 @@ export function RequerimientosPendientesEmail({ requerimientos, appUrl = 'http:/
                 Requerimientos Pendientes de Atención
               </Heading>
               <Text className="text-[#6b6b65] text-sm leading-relaxed m-0 mb-5">
-                Se han detectado{' '}
-                <strong>{total} requerimiento{total !== 1 ? 's' : ''}</strong>{' '}
-                que no {total !== 1 ? 'han sido atendidos' : 'ha sido atendido'} en{' '}
-                {total !== 1 ? 'sus fechas estimadas' : 'su fecha estimada'} de atención.
-                Se requiere <strong>atención y revisión inmediata.</strong>
+                Se han detectado{" "}
+                <strong>
+                  {total} requerimiento{total !== 1 ? "s" : ""}
+                </strong>{" "}
+                que no {total !== 1 ? "han sido atendidos" : "ha sido atendido"}{" "}
+                en {total !== 1 ? "sus fechas estimadas" : "su fecha estimada"}{" "}
+                de atención. Se requiere{" "}
+                <strong>atención y revisión inmediata.</strong>
               </Text>
 
               {/* Lista de requerimientos */}
               {requerimientos.map((r, i) => (
                 <Section
                   key={r.id}
-                  className={`py-4 ${i > 0 ? 'border-t border-black/8' : ''}`}
+                  className={`py-4 ${i > 0 ? "border-t border-black/8" : ""}`}
                 >
                   {/* ID + badge prioridad */}
                   <Row className="mb-2">
                     <Column>
                       <Text className="text-[12px] font-bold text-[#1a1a18] font-mono m-0">
-                        REQ-{String(r.id).padStart(4, '0')}
+                        REQ-{String(r.id).padStart(4, "0")}
                       </Text>
                     </Column>
                     <Column className="text-right">
                       <Text
                         className={`text-[10px] font-bold px-2 py-1 rounded m-0 ${
-                          r.prioridad === 'ALTA'
-                            ? 'text-red-600 bg-red-50'
-                            : 'text-orange-500 bg-orange-50'
+                          r.prioridad === "ALTA"
+                            ? "text-red-600 bg-red-50"
+                            : "text-orange-500 bg-orange-50"
                         }`}
                       >
-                        {r.prioridad === 'ALTA' ? '⚠ ALTA' : 'MEDIA'}
+                        {r.prioridad === "ALTA" ? "⚠ ALTA" : "MEDIA"}
                       </Text>
                     </Column>
                   </Row>
@@ -112,7 +129,7 @@ export function RequerimientosPendientesEmail({ requerimientos, appUrl = 'http:/
                         Días de retraso
                       </Text>
                       <Text className="text-[13px] font-bold text-red-600 m-0">
-                        {r.diasRetraso} día{r.diasRetraso !== 1 ? 's' : ''}
+                        {r.diasRetraso} día{r.diasRetraso !== 1 ? "s" : ""}
                       </Text>
                     </Column>
                     <Column>
@@ -120,7 +137,7 @@ export function RequerimientosPendientesEmail({ requerimientos, appUrl = 'http:/
                         Fecha solicitud
                       </Text>
                       <Text className="text-[13px] text-[#1a1a18] m-0">
-                        {format(new Date(r.fechaSolicitud), 'dd/MM/yyyy')}
+                        {format(new Date(r.fechaSolicitud), "dd/MM/yyyy")}
                       </Text>
                     </Column>
                   </Row>
@@ -156,14 +173,13 @@ export function RequerimientosPendientesEmail({ requerimientos, appUrl = 'http:/
             {/* Footer */}
             <Section className="bg-[#f7f7f5] px-8 py-4 border-t border-black/6">
               <Text className="text-[11px] text-[#9e9e96] leading-snug m-0 text-center">
-                Este correo fue generado automáticamente por SITRALOGFRU.
-                Por favor no responda a este mensaje.
+                Este correo fue generado automáticamente por SITRALOGFRU. Por
+                favor no responda a este mensaje.
               </Text>
             </Section>
-
           </Container>
         </Body>
       </Html>
     </Tailwind>
-  )
+  );
 }

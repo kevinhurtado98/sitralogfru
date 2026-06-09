@@ -1,18 +1,33 @@
-import { Tailwind } from '@react-email/tailwind'
+import { Tailwind } from "@react-email/tailwind";
 import {
-  Html, Head, Body, Container, Section,
-  Text, Heading, Hr, Row, Column, Font,
-} from '@react-email/components'
+  Html,
+  Head,
+  Body,
+  Container,
+  Section,
+  Text,
+  Heading,
+  Hr,
+  Row,
+  Column,
+  Font,
+} from "@react-email/components";
 
 interface Props {
-  nombres:    string
-  apellidos:  string
-  correo:     string
-  contrasena: string
-  appUrl:     string
+  nombres: string;
+  apellidos: string;
+  correo: string;
+  contrasena: string;
+  appUrl: string;
 }
 
-export function BienvenidaEmail({ nombres, apellidos, correo, contrasena, appUrl }: Props) {
+export function BienvenidaEmail({
+  nombres,
+  apellidos,
+  correo,
+  contrasena,
+  appUrl,
+}: Props) {
   return (
     <Tailwind>
       <Html lang="es">
@@ -20,15 +35,17 @@ export function BienvenidaEmail({ nombres, apellidos, correo, contrasena, appUrl
           <Font
             fontFamily="DM Sans"
             fallbackFontFamily="Arial"
-            webFont={{ url: 'https://fonts.gstatic.com/s/dmsans/v15/rP2Hp2ywxg089UriCZOIHQ.woff2', format: 'woff2' }}
+            webFont={{
+              url: "https://fonts.gstatic.com/s/dmsans/v15/rP2Hp2ywxg089UriCZOIHQ.woff2",
+              format: "woff2",
+            }}
             fontWeight={400}
             fontStyle="normal"
           />
         </Head>
 
         <Body className="bg-[#f0ede8] m-0 py-8 font-sans">
-          <Container className="max-w-[520px] mx-auto bg-white rounded-xl overflow-hidden border border-black/8">
-
+          <Container className="max-w-130 mx-auto bg-white rounded-xl overflow-hidden border border-black/8">
             {/* Header */}
             <Section className="bg-[#1a1a18] px-8 py-5">
               <Text className="text-white text-[13px] font-bold tracking-[1.5px] m-0">
@@ -42,8 +59,12 @@ export function BienvenidaEmail({ nombres, apellidos, correo, contrasena, appUrl
                 Bienvenido al sistema
               </Heading>
               <Text className="text-[#6b6b65] text-sm leading-relaxed m-0 mb-6">
-                Hola <strong>{nombres} {apellidos}</strong>, tu cuenta ha sido creada en SITRALOGFRU.
-                A continuación encontrarás tus credenciales de acceso.
+                Hola{" "}
+                <strong>
+                  {nombres} {apellidos}
+                </strong>
+                , tu cuenta ha sido creada en SITRALOGFRU. A continuación
+                encontrarás tus credenciales de acceso.
               </Text>
 
               {/* Credentials card */}
@@ -72,7 +93,8 @@ export function BienvenidaEmail({ nombres, apellidos, correo, contrasena, appUrl
               </Section>
 
               <Text className="text-[12px] text-[#9e9e96] leading-relaxed m-0 mb-6">
-                Por seguridad, te recomendamos cambiar tu contraseña la próxima vez que ingreses al sistema.
+                Por seguridad, te recomendamos cambiar tu contraseña la próxima
+                vez que ingreses al sistema.
               </Text>
 
               <Section className="text-center mt-6">
@@ -88,14 +110,13 @@ export function BienvenidaEmail({ nombres, apellidos, correo, contrasena, appUrl
             {/* Footer */}
             <Section className="bg-[#f7f7f5] px-8 py-4 border-t border-black/6">
               <Text className="text-[11px] text-[#9e9e96] leading-snug m-0 text-center">
-                Este correo fue generado automáticamente por SITRALOGFRU.
-                Si no esperabas este mensaje, puedes ignorarlo.
+                Este correo fue generado automáticamente por SITRALOGFRU. Si no
+                esperabas este mensaje, puedes ignorarlo.
               </Text>
             </Section>
-
           </Container>
         </Body>
       </Html>
     </Tailwind>
-  )
+  );
 }
