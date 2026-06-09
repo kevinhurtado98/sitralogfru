@@ -1,7 +1,9 @@
+import fs from 'fs'
+import path from 'path'
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { parseFacturaXML, XMLParseError, TIPO_DOC } from '@/lib/xml-parser'
+import { parseFacturaXML, XMLParseError } from '@/lib/xml-parser'
 import { calcularSemanaPago } from '@/lib/semana-pago'
 import { addDays, differenceInDays } from 'date-fns'
 
@@ -36,8 +38,9 @@ export async function POST(request: NextRequest): Promise<NextResponse<Respuesta
 
   // ── Parsea el XML ────────────────────────────────────────────────────────────
   let datos: ReturnType<typeof parseFacturaXML>
+  let contenido: string
   try {
-    const contenido = await archivo.text()
+    contenido = await archivo.text()
     datos = parseFacturaXML(contenido)
   } catch (e) {
     const msg = e instanceof XMLParseError ? e.message : 'XML inválido o estructura no reconocida'
@@ -78,12 +81,13 @@ export async function POST(request: NextRequest): Promise<NextResponse<Respuesta
   const estado =
     diasHasta < 0 ? 'VENCIDA' : diasHasta <= 7 ? 'POR_VENCER' : ('PENDIENTE' as const)
 
-  // ── Cálculo financiero (tipo COMPRA por defecto) ─────────────────────────────
-  // El tipo se puede editar después desde el detalle de la factura
-  const tipo = 'COMPRA' as const
-  const retencion = parseFloat((datos.monto * 0.03).toFixed(2))
+  // ── Cálculo financiero ───────────────────────────────────────────────────────
+  // Retención y detracción en 0 por defecto: no todos los proveedores están en
+  // el padrón de retenciones SUNAT. El usuario las ajusta en el detalle.
+  const tipo       = 'COMPRA' as const
+  const retencion  = 0
   const detraccion = 0
-  const montoNeto = parseFloat((datos.monto - retencion).toFixed(2))
+  const montoNeto  = parseFloat((datos.monto - retencion - detraccion).toFixed(2))
 
   // ── Semana de pago ───────────────────────────────────────────────────────────
   const { semana: semanaPago, viernesPago } = calcularSemanaPago(fechaVencimiento)
@@ -92,37 +96,52 @@ export async function POST(request: NextRequest): Promise<NextResponse<Respuesta
   try {
     const factura = await prisma.factura.create({
       data: {
-        proveedor: datos.proveedor,
+        proveedor:    datos.proveedor,
         rucProveedor: datos.rucProveedor || null,
-        serie: datos.serie,
-        numero: datos.numero,
+        serie:        datos.serie,
+        numero:       datos.numero,
         fechaEmision: datos.fechaEmision,
         fechaVencimiento,
-        moneda: datos.moneda,
+        moneda:       datos.moneda,
         tipo,
-        monto: datos.monto,
+        monto:        datos.monto,
         retencion,
         detraccion,
         montoNeto,
         estado,
         semanaPago,
         viernesPago,
-        creadoPorId: Number(session.user.id),
+        creadoPorId:  Number(session.user.id),
       },
     })
 
+    // ── Guarda el archivo XML en disco para auditoría ────────────────────────
+    try {
+      const uploadsDir = path.join(process.cwd(), 'public', 'uploads', 'xml')
+      fs.mkdirSync(uploadsDir, { recursive: true })
+      const filename = `${datos.serie}-${datos.numero}.xml`
+      fs.writeFileSync(path.join(uploadsDir, filename), contenido, 'utf-8')
+      await prisma.factura.update({
+        where: { id: factura.id },
+        data:  { xmlUrl: `/uploads/xml/${filename}` },
+      })
+    } catch (fsErr) {
+      // No crítico: si falla el guardado del XML, la factura ya quedó registrada
+      console.warn('[upload:xml-storage]', fsErr)
+    }
+
     await prisma.auditLog.create({
       data: {
-        userId: Number(session.user.id),
-        modulo: 'COMPROBANTES',
-        accion: 'IMPORTAR_XML',
-        entidadId: String(factura.id),
+        userId:      Number(session.user.id),
+        modulo:      'COMPROBANTES',
+        accion:      'IMPORTAR_XML',
+        entidadId:   String(factura.id),
         datosNuevos: JSON.stringify({
-          serie: datos.serie,
-          numero: datos.numero,
+          serie:     datos.serie,
+          numero:    datos.numero,
           proveedor: datos.proveedor,
-          monto: datos.monto,
-          archivo: archivo.name,
+          monto:     datos.monto,
+          archivo:   archivo.name,
         }),
       },
     })
@@ -130,9 +149,9 @@ export async function POST(request: NextRequest): Promise<NextResponse<Respuesta
     return NextResponse.json({
       estado: 'exitoso',
       factura: {
-        id: factura.id,
-        serie: datos.serie,
-        numero: datos.numero,
+        id:        factura.id,
+        serie:     datos.serie,
+        numero:    datos.numero,
         proveedor: datos.proveedor,
       },
     })

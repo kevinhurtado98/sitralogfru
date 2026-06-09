@@ -26,6 +26,8 @@ export async function actualizarFactura(
     notas:                  string
     registradoContable:     boolean
     fechaRegistroContable:  string | null
+    retencion:              number
+    detraccion:             number
   },
 ): Promise<{ ok: true } | Err> {
   const userId = await getSessionUserId()
@@ -34,8 +36,12 @@ export async function actualizarFactura(
   try {
     const anterior = await prisma.factura.findUnique({
       where:  { id },
-      select: { tipo: true, formaPago: true, ordenCompra: true, registradoContable: true },
+      select: { tipo: true, formaPago: true, ordenCompra: true, registradoContable: true, monto: true },
     })
+
+    const montoNeto = parseFloat(
+      (Number(anterior?.monto ?? 0) - data.retencion - data.detraccion).toFixed(2)
+    )
 
     await prisma.factura.update({
       where: { id },
@@ -48,6 +54,9 @@ export async function actualizarFactura(
         fechaRegistroContable: data.registradoContable
           ? (data.fechaRegistroContable ? new Date(data.fechaRegistroContable) : new Date())
           : null,
+        retencion:             data.retencion,
+        detraccion:            data.detraccion,
+        montoNeto,
       },
     })
 

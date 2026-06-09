@@ -252,8 +252,12 @@ export function FacturaDetalle({ factura: f }: { factura: FacturaFull }) {
   const [registradoContable,    setRegistradoContable]    = useState(f.registradoContable)
   const [fechaRegistroContable, setFechaRegistroContable] = useState(fmtInput(f.fechaRegistroContable))
   const [estado,                setEstado]                = useState(f.estado)
+  const [retencion,             setRetencion]             = useState(f.retencion)
+  const [detraccion,            setDetraccion]            = useState(f.detraccion)
   const [feedback,              setFeedback]              = useState<{ ok: boolean; msg: string } | null>(null)
   const [notaModal,             setNotaModal]             = useState<'credito' | 'debito' | null>(null)
+
+  const montoNeto = Math.max(0, f.monto - retencion - detraccion)
 
   function handleGuardar() {
     setFeedback(null)
@@ -265,6 +269,8 @@ export function FacturaDetalle({ factura: f }: { factura: FacturaFull }) {
         notas,
         registradoContable,
         fechaRegistroContable: registradoContable ? (fechaRegistroContable || null) : null,
+        retencion,
+        detraccion,
       })
       if (res.ok) {
         setFeedback({ ok: true, msg: 'Cambios guardados correctamente.' })
@@ -339,25 +345,48 @@ export function FacturaDetalle({ factura: f }: { factura: FacturaFull }) {
             value={fmt(f.fechaVencimiento)}
             color={estado !== 'PAGADA' ? 'var(--amber)' : undefined}
           />
-          <Field label="Monto total"    value={`${MONEDA_PRE[f.moneda]} ${f.monto.toFixed(2)}`} />
-          <Field
-            label="Retención (3%)"
-            value={`- ${MONEDA_PRE[f.moneda]} ${f.retencion.toFixed(2)}`}
-            color="var(--red)"
-          />
-          {f.detraccion > 0 && (
-            <Field
-              label="Detracción"
-              value={`- ${MONEDA_PRE[f.moneda]} ${f.detraccion.toFixed(2)}`}
-              color="var(--red)"
-            />
-          )}
-          <Field
-            label="Monto neto a pagar"
-            value={`${MONEDA_PRE[f.moneda]} ${f.montoNeto.toFixed(2)}`}
-            color="var(--green)"
-            big
-          />
+          <Field label="Monto total" value={`${MONEDA_PRE[f.moneda]} ${f.monto.toFixed(2)}`} />
+
+          <div className="fi" style={{ gap: 3 }}>
+            <label>Retención</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ fontSize: 13, color: 'var(--t3)', flexShrink: 0 }}>
+                {MONEDA_PRE[f.moneda]}
+              </span>
+              <input
+                type="number"
+                value={retencion}
+                onChange={(e) => setRetencion(Math.max(0, parseFloat(e.target.value) || 0))}
+                min="0"
+                step="0.01"
+                style={{ fontFamily: 'var(--fm)', color: retencion > 0 ? 'var(--red)' : undefined }}
+              />
+            </div>
+          </div>
+
+          <div className="fi" style={{ gap: 3 }}>
+            <label>Detracción</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ fontSize: 13, color: 'var(--t3)', flexShrink: 0 }}>
+                {MONEDA_PRE[f.moneda]}
+              </span>
+              <input
+                type="number"
+                value={detraccion}
+                onChange={(e) => setDetraccion(Math.max(0, parseFloat(e.target.value) || 0))}
+                min="0"
+                step="0.01"
+                style={{ fontFamily: 'var(--fm)', color: detraccion > 0 ? 'var(--red)' : undefined }}
+              />
+            </div>
+          </div>
+
+          <div className="fi" style={{ gap: 3 }}>
+            <label>Monto neto a pagar</label>
+            <div style={{ fontSize: 17, fontWeight: 500, color: 'var(--green)', paddingTop: 2 }}>
+              {MONEDA_PRE[f.moneda]} {montoNeto.toFixed(2)}
+            </div>
+          </div>
         </div>
       </div>
 
