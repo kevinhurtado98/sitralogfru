@@ -1,3 +1,5 @@
+// Modelado de base de datos con Prisma ORM — motor SQL Server
+// Define las entidades del sistema: Usuarios, Comprobantes, Requerimientos y Auditoría
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,6 +10,7 @@ datasource db {
 
 // ─── AUTH ────────────────────────────────────────────────────────────────────
 
+// Define los roles del sistema (ej. Administrador, Logística)
 model Rol {
   id          Int      @id @default(autoincrement())
   nombre      String   @unique @db.NVarChar(50)
@@ -21,6 +24,7 @@ model Rol {
   @@map("Roles")
 }
 
+// Usuarios del sistema con contraseña hasheada y referencia a su rol
 model User {
   id             Int      @id @default(autoincrement())
   nombres        String   @db.NVarChar(100)
@@ -44,6 +48,7 @@ model User {
 
 // ─── CONFIGURACIÓN ───────────────────────────────────────────────────────────
 
+// Áreas de la empresa que pueden generar requerimientos
 model Area {
   id        Int      @id @default(autoincrement())
   nombre    String   @unique @db.NVarChar(100)
@@ -59,6 +64,7 @@ model Area {
   @@map("Areas")
 }
 
+// Persona responsable de atender los requerimientos dentro de un área
 model Responsable {
   id        Int      @id @default(autoincrement())
   nombres   String   @db.NVarChar(100)
@@ -77,6 +83,7 @@ model Responsable {
 
 // ─── COMPROBANTES ────────────────────────────────────────────────────────────
 
+// Comprobante de pago (factura) con estado, montos y trazabilidad contable
 model Factura {
   id                    Int       @id @default(autoincrement())
   proveedor             String    @db.NVarChar(200)
@@ -112,6 +119,7 @@ model Factura {
   @@map("Facturas")
 }
 
+// Nota de crédito que reduce el monto de una factura
 model NotaCredito {
   id          Int      @id @default(autoincrement())
   facturaId   Int
@@ -127,6 +135,7 @@ model NotaCredito {
   @@map("NotasCredito")
 }
 
+// Nota de débito que incrementa el monto de una factura
 model NotaDebito {
   id          Int      @id @default(autoincrement())
   facturaId   Int
@@ -144,6 +153,7 @@ model NotaDebito {
 
 // ─── REQUERIMIENTOS ──────────────────────────────────────────────────────────
 
+// Solicitud de compra o servicio generada por un área de la empresa
 model Requerimiento {
   id                    Int       @id @default(autoincrement())
   fechaSolicitud        DateTime
@@ -170,6 +180,7 @@ model Requerimiento {
 
 // ─── AUDITORÍA ───────────────────────────────────────────────────────────────
 
+// Registro de cada acción realizada en el sistema con datos anteriores y nuevos
 model AuditLog {
   id              Int      @id @default(autoincrement())
   userId          Int

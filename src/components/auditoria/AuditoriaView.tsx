@@ -1,3 +1,4 @@
+// Módulo de Auditoría: muestra el historial de acciones realizadas en el sistema
 'use client'
 
 import { useState, useMemo } from 'react'
@@ -11,6 +12,7 @@ interface AuditLog {
   user: { nombre: string; email: string }
 }
 
+// Estilos visuales por módulo: color e ícono según el origen del log
 const MODULO_STYLE: Record<string, { bg: string; color: string; icon: React.ReactNode; badgeCls: string; label: string }> = {
   COMPROBANTES:   { bg: 'var(--blue-bg)',  color: 'var(--blue)',  icon: <IconUpload size={14} />,       badgeCls: 'badge-blue',  label: 'Comprobantes' },
   REQUERIMIENTOS: { bg: 'var(--ora-bg)',   color: 'var(--ora)',   icon: <IconPencil size={14} />,       badgeCls: 'badge-ora',   label: 'Requerimientos' },
@@ -19,6 +21,7 @@ const MODULO_STYLE: Record<string, { bg: string; color: string; icon: React.Reac
   CONFIGURACION:  { bg: 'var(--amber-bg)', color: 'var(--amber)', icon: <IconSettings size={14} />,     badgeCls: 'badge-amber', label: 'Configuración' },
 }
 
+// Íconos asignados a cada tipo de acción registrada en auditoría
 const ACCION_ICON: Record<string, React.ReactNode> = {
   IMPORTAR_XML:      <IconUpload size={14} />,
   CREAR:             <IconPlus size={14} />,
@@ -35,6 +38,7 @@ const ACCION_ICON: Record<string, React.ReactNode> = {
   DESACTIVAR_AREA:   <IconBan size={14} />,
 }
 
+// Agrupa las acciones en categorías para el filtro de tipo de acción
 const CATEGORIA_ACCION: Record<string, string> = {
   CREAR: 'creacion', CREAR_REQUERIMIENTO: 'creacion', CREAR_AREA: 'creacion',
   EDITAR: 'edicion', EDITAR_AREA: 'edicion', CAMBIAR_ESTADO: 'edicion',
@@ -45,6 +49,7 @@ const CATEGORIA_ACCION: Record<string, string> = {
   NOTIFICACION: 'notificacion',
 }
 
+// Componente principal: muestra los logs con filtros por módulo, usuario, tipo y fecha
 export function AuditoriaView({ logs }: { logs: AuditLog[] }) {
   const [busqueda,     setBusqueda]     = useState('')
   const [filtroModulo, setFiltroModulo] = useState('')
@@ -52,6 +57,7 @@ export function AuditoriaView({ logs }: { logs: AuditLog[] }) {
   const [filtroDesde,  setFiltroDesde]  = useState('')
   const [filtroHasta,  setFiltroHasta]  = useState('')
 
+  // Filtra los logs aplicando todos los criterios seleccionados por el usuario
   const filtrados = useMemo(() => {
     let r = logs
 
@@ -71,6 +77,7 @@ export function AuditoriaView({ logs }: { logs: AuditLog[] }) {
     return r
   }, [logs, busqueda, filtroModulo, filtroAccion, filtroDesde, filtroHasta])
 
+  // Resetea todos los filtros activos al estado inicial
   function limpiar() {
     setBusqueda(''); setFiltroModulo(''); setFiltroAccion('')
     setFiltroDesde(''); setFiltroHasta('')

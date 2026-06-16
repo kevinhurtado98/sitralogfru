@@ -1,3 +1,4 @@
+// Server Actions del módulo de Requerimientos (creación y cambio de estado)
 'use server'
 
 import { prisma } from '@/lib/prisma'
@@ -8,6 +9,7 @@ import type { EstadoRequerimiento } from '@/lib/types'
 
 type Err = { ok: false; error: string }
 
+// Validación de los campos requeridos al crear un requerimiento
 const crearSchema = z.object({
   fechaSolicitud:        z.string().min(1),
   areaId:                z.number().int(),
@@ -29,6 +31,7 @@ async function getSessionUserId(): Promise<number | null> {
   return null
 }
 
+// Registra un nuevo requerimiento en la BD después de validar los datos con Zod
 export async function crearRequerimiento(data: {
   fechaSolicitud:        string
   areaId:                number
@@ -84,6 +87,7 @@ export async function crearRequerimiento(data: {
   }
 }
 
+// Cambia el estado de un requerimiento y asigna al usuario que lo atendió
 export async function cambiarEstadoRequerimiento(
   id: number,
   estado: EstadoRequerimiento,

@@ -1,3 +1,4 @@
+// Mecanismo de alertas por correo usando Brevo (ex Sendinblue) como proveedor SMTP
 import { render } from "@react-email/render";
 import { BienvenidaEmail } from "@/emails/BienvenidaEmail";
 import { RequerimientosPendientesEmail } from "@/emails/RequerimientosPendientesEmail";
@@ -8,8 +9,10 @@ import type { FacturaEmailItem } from "@/emails/FacturasVencidasEmail";
 const API_URL = "https://api.brevo.com/v3/smtp/email";
 const APP_URL = process.env.AUTH_URL ?? "http://localhost:3000";
 
+// Correo fijo que recibe todas las alertas automáticas del sistema
 const ALERTA_DESTINATARIO = "khurtado@fruchincha.com.pe";
 
+// Envía correo de bienvenida con las credenciales al nuevo usuario
 export async function sendWelcomeEmail(params: {
   nombres: string;
   apellidos: string;
@@ -64,6 +67,7 @@ export async function sendWelcomeEmail(params: {
   }
 }
 
+// Envía alerta con la lista de requerimientos pendientes de atención
 export async function sendRequerimientosPendientesEmail(params: {
   requerimientos: RequerimientoEmailItem[];
 }): Promise<{ ok: true } | { ok: false; error: string }> {
@@ -112,6 +116,7 @@ export async function sendRequerimientosPendientesEmail(params: {
   }
 }
 
+// Envía alerta con las facturas vencidas que aún no tienen pago registrado
 export async function sendFacturasVencidasEmail(params: {
   facturas: FacturaEmailItem[];
 }): Promise<{ ok: true } | { ok: false; error: string }> {
