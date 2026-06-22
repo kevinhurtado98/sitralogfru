@@ -29,6 +29,7 @@ interface FacturaFull {
   ordenCompra: string | null
   fechaRegistroContable: Date | string | null
   registradoContable: boolean
+  fechaPago: Date | string | null
   semanaPago: number | null; viernesPago: Date | string | null
   notas: string | null
   notasCredito: NotaDoc[]; notasDebito: NotaDoc[]
@@ -251,6 +252,7 @@ export function FacturaDetalle({ factura: f }: { factura: FacturaFull }) {
   const [notas,                 setNotas]                 = useState(f.notas ?? '')
   const [registradoContable,    setRegistradoContable]    = useState(f.registradoContable)
   const [fechaRegistroContable, setFechaRegistroContable] = useState(fmtInput(f.fechaRegistroContable))
+  const [fechaPago,             setFechaPago]             = useState(fmtInput(f.fechaPago) || format(new Date(), 'yyyy-MM-dd'))
   const [estado,                setEstado]                = useState(f.estado)
   const [retencion,             setRetencion]             = useState(f.retencion)
   const [detraccion,            setDetraccion]            = useState(f.detraccion)
@@ -269,6 +271,7 @@ export function FacturaDetalle({ factura: f }: { factura: FacturaFull }) {
         notas,
         registradoContable,
         fechaRegistroContable: registradoContable ? (fechaRegistroContable || null) : null,
+        fechaPago: estado === 'PAGADA' ? (fechaPago || null) : null,
         retencion,
         detraccion,
       })
@@ -283,10 +286,10 @@ export function FacturaDetalle({ factura: f }: { factura: FacturaFull }) {
   function handleMarcarPagada() {
     setFeedback(null)
     startTransition(async () => {
-      const res = await marcarComoPagada(f.id)
+      const res = await marcarComoPagada(f.id, fechaPago)
       if (res.ok) {
         setEstado('PAGADA')
-        setFeedback({ ok: true, msg: 'Factura marcada como pagada.' })
+        setFeedback({ ok: true, msg: `Factura marcada como pagada (${format(new Date(fechaPago), 'dd/MM/yyyy')}).` })
         router.refresh()
       } else {
         setFeedback({ ok: false, msg: res.error })
@@ -464,6 +467,17 @@ export function FacturaDetalle({ factura: f }: { factura: FacturaFull }) {
             </div>
           </div>
 
+          {estado === 'PAGADA' && (
+            <div className="fi">
+              <label>Fecha de pago</label>
+              <input
+                type="date"
+                value={fechaPago}
+                onChange={(e) => setFechaPago(e.target.value)}
+              />
+            </div>
+          )}
+
           <div className="fi" style={{ gridColumn: '1 / -1' }}>
             <label>Notas internas</label>
             <textarea
@@ -535,6 +549,16 @@ export function FacturaDetalle({ factura: f }: { factura: FacturaFull }) {
         >
           <IconDeviceFloppy size={13} /> {isPending ? 'Guardando...' : 'Guardar cambios'}
         </button>
+        {estado !== 'PAGADA' && (
+          <input
+            type="date"
+            value={fechaPago}
+            onChange={(e) => setFechaPago(e.target.value)}
+            disabled={!registradoContable || isPending}
+            title="Fecha de pago (puede adelantarse antes del vencimiento)"
+            style={{ width: 140 }}
+          />
+        )}
         <button
           className="btn btn-g"
           onClick={handleMarcarPagada}

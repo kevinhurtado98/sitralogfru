@@ -16,6 +16,10 @@ export default async function RequerimientoDetallePage({ params }: Props) {
       responsable: { select: { nombres: true, apellidos: true, correo: true } },
       creadoPor: { select: { nombres: true, apellidos: true } },
       atendidoPor: { select: { nombres: true, apellidos: true } },
+      historial: {
+        orderBy: { createdAt: "desc" },
+        include: { registradoPor: { select: { nombres: true, apellidos: true } } },
+      },
     },
   });
   if (!raw) notFound();
@@ -36,6 +40,12 @@ export default async function RequerimientoDetallePage({ params }: Props) {
             `${raw.atendidoPor.nombres} ${raw.atendidoPor.apellidos}`.trim(),
         }
       : null,
+    historial: raw.historial.map((h) => ({
+      ...h,
+      registradoPor: {
+        nombre: `${h.registradoPor.nombres} ${h.registradoPor.apellidos}`.trim(),
+      },
+    })),
   };
 
   return <RequerimientoDetalle requerimiento={req} />;

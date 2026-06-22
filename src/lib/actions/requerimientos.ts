@@ -87,13 +87,20 @@ export async function crearRequerimiento(data: {
   }
 }
 
-// Cambia el estado de un requerimiento y asigna al usuario que lo atendió
+// Cambia el estado de un requerimiento, asigna al usuario que lo atendió y registra el cambio en el historial
 export async function cambiarEstadoRequerimiento(
   id: number,
   estado: EstadoRequerimiento,
+  observacion?: string,
+  imagenUrl?: string,
 ): Promise<{ ok: true } | Err> {
   const userId = await getSessionUserId()
   if (!userId) return { ok: false, error: 'No autenticado' }
+
+  const obs = observacion?.trim() || ''
+  if (estado === 'ATENDIDO_PARCIAL' && !obs) {
+    return { ok: false, error: 'Agrega una observación: qué se hizo y qué falta por atender.' }
+  }
 
   try {
     const anterior = await prisma.requerimiento.findUnique({ where: { id }, select: { estado: true } })
@@ -108,6 +115,16 @@ export async function cambiarEstadoRequerimiento(
       },
     })
 
+    await prisma.historialEstadoRequerimiento.create({
+      data: {
+        requerimientoId: id,
+        estado,
+        observacion: obs || null,
+        imagenUrl: imagenUrl || null,
+        registradoPorId: userId,
+      },
+    })
+
     await prisma.auditLog.create({
       data: {
         userId,
@@ -115,7 +132,7 @@ export async function cambiarEstadoRequerimiento(
         accion:          'CAMBIAR_ESTADO',
         entidadId:       String(id),
         datosAnteriores: JSON.stringify({ estado: anterior?.estado }),
-        datosNuevos:     JSON.stringify({ estado }),
+        datosNuevos:     JSON.stringify({ estado, observacion: obs, imagenUrl }),
       },
     })
 

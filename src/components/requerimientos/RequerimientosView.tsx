@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { format } from 'date-fns'
-import { IconSearch, IconEye, IconPlus } from '@tabler/icons-react'
+import { IconSearch, IconEye, IconPlus, IconFileSpreadsheet } from '@tabler/icons-react'
 import type { EstadoRequerimiento, Prioridad, TipoRequerimiento } from '@/lib/types'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -26,6 +26,7 @@ export interface ReqRow {
   diasRetraso:    number
   responsable:    { nombre: string }
   creadoPor:      { nombre: string }
+  fechaUltimoCambio: Date | string | null
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -91,6 +92,16 @@ export function RequerimientosView({
     setBusqueda(''); setFiltroArea(''); setFiltroDesde(''); setFiltroHasta(''); setFiltroEstado('')
   }
 
+  function exportarExcel() {
+    const params = new URLSearchParams()
+    if (busqueda)     params.set('q', busqueda)
+    if (filtroArea)   params.set('area', filtroArea)
+    if (filtroEstado) params.set('estado', filtroEstado)
+    if (filtroDesde)  params.set('desde', filtroDesde)
+    if (filtroHasta)  params.set('hasta', filtroHasta)
+    window.location.href = `/api/requerimientos/export?${params.toString()}`
+  }
+
   return (
     <>
       {/* Filtros */}
@@ -127,6 +138,7 @@ export function RequerimientosView({
             </select>
           </div>
           <button className="btn" onClick={limpiar}><IconSearch size={13} /> Limpiar</button>
+          <button className="btn" onClick={exportarExcel}><IconFileSpreadsheet size={13} /> Exportar Excel</button>
           <a href="/requerimientos/nuevo" className="btn btn-p" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             <IconPlus size={13} /> Nuevo requerimiento
           </a>
@@ -149,12 +161,12 @@ export function RequerimientosView({
               <tr>
                 <th>Fecha</th><th>Área</th><th>Responsable</th><th>Tipo</th>
                 <th>Prioridad</th><th>Descripción</th><th>Generado por</th>
-                <th>Días atraso</th><th>Estado</th><th></th>
+                <th>Días atraso</th><th>Estado</th><th>Últ. actualización</th><th></th>
               </tr>
             </thead>
             <tbody>
               {filtrados.length === 0 ? (
-                <tr><td colSpan={10} style={{ textAlign: 'center', padding: '32px 0', color: 'var(--t3)' }}>
+                <tr><td colSpan={11} style={{ textAlign: 'center', padding: '32px 0', color: 'var(--t3)' }}>
                   No hay requerimientos
                 </td></tr>
               ) : filtrados.map((r) => (
@@ -174,6 +186,9 @@ export function RequerimientosView({
                       : <span style={{ color: 'var(--t3)' }}>—</span>}
                   </td>
                   <td>{estadoBadge(r.estado)}</td>
+                  <td style={{ fontSize: 12, color: 'var(--t3)', whiteSpace: 'nowrap' }}>
+                    {r.fechaUltimoCambio ? format(new Date(r.fechaUltimoCambio), 'dd/MM/yyyy HH:mm') : '—'}
+                  </td>
                   <td>
                     <a href={`/requerimientos/${r.id}`} className="ib"><IconEye size={13} /></a>
                   </td>

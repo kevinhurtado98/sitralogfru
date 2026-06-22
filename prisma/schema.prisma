@@ -37,11 +37,12 @@ model User {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  rol                   Rol             @relation(fields: [rolId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-  facturasCreadas       Factura[]       @relation("FacturaCreadaPor")
-  requerimientosCrea    Requerimiento[] @relation("RequerimientoCreadoPor")
-  requerimientosAtiende Requerimiento[] @relation("RequerimientoAtendidoPor")
-  auditLogs             AuditLog[]
+  rol                     Rol                            @relation(fields: [rolId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  facturasCreadas         Factura[]                      @relation("FacturaCreadaPor")
+  requerimientosCrea      Requerimiento[]                @relation("RequerimientoCreadoPor")
+  requerimientosAtiende   Requerimiento[]                @relation("RequerimientoAtendidoPor")
+  auditLogs               AuditLog[]
+  historialRequerimientos HistorialEstadoRequerimiento[]
 
   @@map("Usuarios")
 }
@@ -103,6 +104,7 @@ model Factura {
   ordenCompra           String?   @db.NVarChar(50)
   fechaRegistroContable DateTime?
   registradoContable    Boolean   @default(false)
+  fechaPago             DateTime?
   semanaPago            Int?
   viernesPago           DateTime?
   notas                 String?   @db.NVarChar(Max)
@@ -170,12 +172,29 @@ model Requerimiento {
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
-  area        Area        @relation(fields: [areaId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-  responsable Responsable @relation(fields: [responsableId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-  creadoPor   User        @relation("RequerimientoCreadoPor", fields: [creadoPorId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-  atendidoPor User?       @relation("RequerimientoAtendidoPor", fields: [atendidoPorId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  area        Area                           @relation(fields: [areaId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  responsable Responsable                    @relation(fields: [responsableId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  creadoPor   User                           @relation("RequerimientoCreadoPor", fields: [creadoPorId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  atendidoPor User?                          @relation("RequerimientoAtendidoPor", fields: [atendidoPorId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  historial   HistorialEstadoRequerimiento[]
 
   @@map("Requerimientos")
+}
+
+// Registro histórico de cada cambio de estado de un requerimiento, con observación y evidencia opcional
+model HistorialEstadoRequerimiento {
+  id              Int      @id @default(autoincrement())
+  requerimientoId Int
+  estado          String   @db.NVarChar(25)
+  observacion     String?  @db.NVarChar(1000)
+  imagenUrl       String?  @db.NVarChar(500)
+  registradoPorId Int
+  createdAt       DateTime @default(now())
+
+  requerimiento Requerimiento @relation(fields: [requerimientoId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  registradoPor User          @relation(fields: [registradoPorId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+
+  @@map("HistorialEstadoRequerimientos")
 }
 
 // ─── AUDITORÍA ───────────────────────────────────────────────────────────────

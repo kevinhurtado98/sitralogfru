@@ -10,6 +10,7 @@ export default async function RequerimientosPage() {
         area: { select: { nombre: true } },
         responsable: { select: { nombres: true, apellidos: true } },
         creadoPor: { select: { nombres: true, apellidos: true } },
+        historial: { orderBy: { createdAt: "desc" }, take: 1, select: { createdAt: true } },
       },
     }),
     prisma.area.findMany({
@@ -34,6 +35,7 @@ export default async function RequerimientosPage() {
     creadoPor: {
       nombre: `${r.creadoPor.nombres} ${r.creadoPor.apellidos}`.trim(),
     },
+    fechaUltimoCambio: r.historial[0]?.createdAt ?? null,
   }));
 
   const areas: AreaConResponsables[] = areasRaw.map((a) => ({

@@ -4,8 +4,8 @@ import { useState, useMemo, useTransition } from 'react'
 import Link from 'next/link'
 import { format } from 'date-fns'
 import {
-  IconAlertTriangle, IconSearch, IconEye, IconPencil, IconTrash,
-  IconFileCode, IconRotate, IconChecks, IconX, IconCircleCheck,
+  IconAlertTriangle, IconSearch, IconEye, IconTrash,
+  IconFileCode, IconPencilPlus, IconRotate, IconChecks, IconX, IconCircleCheck, IconFileSpreadsheet,
 } from '@tabler/icons-react'
 import { eliminarFactura, toggleRegistroContable } from '@/lib/actions/comprobantes'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
@@ -132,6 +132,17 @@ export function ComprobantesView({ facturas: initial }: { facturas: FacturaRow[]
   function limpiarFiltros() {
     setBusqueda(''); setFiltroEstado(''); setFiltroDesde('')
     setFiltroHasta(''); setFiltroSemana(''); setFiltroContable('')
+  }
+
+  function exportarExcel() {
+    const params = new URLSearchParams()
+    if (busqueda)       params.set('q', busqueda)
+    if (filtroEstado)   params.set('estado', filtroEstado)
+    if (filtroDesde)    params.set('desde', filtroDesde)
+    if (filtroHasta)    params.set('hasta', filtroHasta)
+    if (filtroSemana)   params.set('semana', filtroSemana)
+    if (filtroContable) params.set('contable', filtroContable)
+    window.location.href = `/api/comprobantes/export?${params.toString()}`
   }
 
   function toggleContable(id: number) {
@@ -292,11 +303,21 @@ export function ComprobantesView({ facturas: initial }: { facturas: FacturaRow[]
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         }}>
           <span style={{ fontSize: 13, fontWeight: 600 }}>Facturas registradas</span>
-          <Link href="/comprobantes/nuevo">
-            <button className="btn btn-sm">
-              <IconFileCode size={13} /> Importar XML
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className="btn btn-sm" onClick={exportarExcel}>
+              <IconFileSpreadsheet size={13} /> Exportar Excel
             </button>
-          </Link>
+            <Link href="/comprobantes/nuevo-manual">
+              <button className="btn btn-sm">
+                <IconPencilPlus size={13} /> Registro manual
+              </button>
+            </Link>
+            <Link href="/comprobantes/nuevo">
+              <button className="btn btn-sm">
+                <IconFileCode size={13} /> Importar XML
+              </button>
+            </Link>
+          </div>
         </div>
 
         <div style={{ overflowX: 'auto' }}>
@@ -381,9 +402,6 @@ export function ComprobantesView({ facturas: initial }: { facturas: FacturaRow[]
                     <div style={{ display: 'flex', gap: 4 }}>
                       <Link href={`/comprobantes/${f.id}`}>
                         <button className="ib" title="Ver detalle"><IconEye size={13} /></button>
-                      </Link>
-                      <Link href={`/comprobantes/${f.id}`}>
-                        <button className="ib" title="Editar"><IconPencil size={13} /></button>
                       </Link>
                       <button
                         className="ib ib-danger"

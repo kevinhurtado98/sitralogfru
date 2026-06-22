@@ -4,8 +4,28 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
+import { z } from "zod";
+import { differenceInDays } from "date-fns";
+import { calcularSemanaPago } from "@/lib/semana-pago";
 
 type Err = { ok: false; error: string };
+
+const crearManualSchema = z.object({
+  proveedor: z.string().min(1).max(200),
+  rucProveedor: z.string().max(20).optional(),
+  serie: z.string().min(1).max(10),
+  numero: z.string().min(1).max(20),
+  fechaEmision: z.string().min(1),
+  fechaVencimiento: z.string().min(1),
+  moneda: z.enum(["SOLES", "DOLARES", "EUROS"]),
+  tipo: z.enum(["COMPRA", "SERVICIO"]),
+  monto: z.number().positive(),
+  formaPago: z
+    .enum(["CREDITO", "FACTORING", "FACTURA_NEGOCIABLE", "LETRA"])
+    .optional(),
+  ordenCompra: z.string().max(50).optional(),
+  notas: z.string().optional(),
+});
 
 // Obtiene el ID del usuario autenticado desde la sesión JWT
 async function getSessionUserId(): Promise<number | null> {
@@ -22,6 +42,87 @@ async function getSessionUserId(): Promise<number | null> {
   return null;
 }
 
+// Registra una factura manualmente cuando el proveedor no envía XML
+export async function crearFacturaManual(
+  data: z.infer<typeof crearManualSchema>,
+): Promise<{ ok: true; id: number } | Err> {
+  const parsed = crearManualSchema.safeParse(data);
+  if (!parsed.success) {
+    const msg = parsed.error.issues[0]?.message ?? "Datos inválidos";
+    return { ok: false, error: msg };
+  }
+
+  const creadoPorId = await getSessionUserId();
+  if (!creadoPorId) return { ok: false, error: "No autenticado" };
+
+  const d = parsed.data;
+
+  const existente = await prisma.factura.findFirst({
+    where: { serie: d.serie, numero: d.numero },
+    select: { id: true },
+  });
+  if (existente) {
+    return { ok: false, error: `${d.serie}-${d.numero} ya está registrada` };
+  }
+
+  const fechaEmision = new Date(d.fechaEmision);
+  const fechaVencimiento = new Date(d.fechaVencimiento);
+
+  const diasHasta = differenceInDays(fechaVencimiento, new Date());
+  const estado =
+    diasHasta < 0 ? "VENCIDA" : diasHasta <= 7 ? "POR_VENCER" : "PENDIENTE";
+
+  const { semana: semanaPago, viernesPago } =
+    calcularSemanaPago(fechaVencimiento);
+
+  try {
+    const factura = await prisma.factura.create({
+      data: {
+        proveedor: d.proveedor.trim(),
+        rucProveedor: d.rucProveedor?.trim() || null,
+        serie: d.serie.trim(),
+        numero: d.numero.trim(),
+        fechaEmision,
+        fechaVencimiento,
+        moneda: d.moneda,
+        tipo: d.tipo,
+        monto: d.monto,
+        retencion: 0,
+        detraccion: 0,
+        montoNeto: d.monto,
+        estado,
+        formaPago: d.formaPago ?? null,
+        ordenCompra: d.ordenCompra?.trim() || null,
+        notas: d.notas?.trim() || null,
+        semanaPago,
+        viernesPago,
+        creadoPorId,
+      },
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        userId: creadoPorId,
+        modulo: "COMPROBANTES",
+        accion: "CREAR_MANUAL",
+        entidadId: String(factura.id),
+        datosNuevos: JSON.stringify({
+          serie: d.serie,
+          numero: d.numero,
+          proveedor: d.proveedor,
+          monto: d.monto,
+        }),
+      },
+    });
+
+    revalidatePath("/comprobantes");
+    return { ok: true, id: factura.id };
+  } catch (e) {
+    console.error("[crearFacturaManual]", e);
+    return { ok: false, error: "Error al registrar la factura" };
+  }
+}
+
 // Actualiza los datos de una factura y calcula el monto neto descontando retención y detracción
 export async function actualizarFactura(
   id: number,
@@ -32,6 +133,7 @@ export async function actualizarFactura(
     notas: string;
     registradoContable: boolean;
     fechaRegistroContable: string | null;
+    fechaPago: string | null;
     retencion: number;
     detraccion: number;
   },
@@ -70,6 +172,7 @@ export async function actualizarFactura(
             ? new Date(data.fechaRegistroContable)
             : new Date()
           : null,
+        fechaPago: data.fechaPago ? new Date(data.fechaPago) : null,
         retencion: data.retencion,
         detraccion: data.detraccion,
         montoNeto,
@@ -96,17 +199,20 @@ export async function actualizarFactura(
   }
 }
 
-// Cambia el estado de la factura a PAGADA y registra la acción en auditoría
+// Cambia el estado de la factura a PAGADA con la fecha de pago real (permite adelantar el pago) y registra la acción en auditoría
 export async function marcarComoPagada(
   id: number,
+  fechaPago?: string,
 ): Promise<{ ok: true } | Err> {
   const userId = await getSessionUserId();
   if (!userId) return { ok: false, error: "No autenticado" };
 
+  const fecha = fechaPago ? new Date(fechaPago) : new Date();
+
   try {
     await prisma.factura.update({
       where: { id },
-      data: { estado: "PAGADA" },
+      data: { estado: "PAGADA", fechaPago: fecha },
     });
 
     await prisma.auditLog.create({
@@ -115,7 +221,7 @@ export async function marcarComoPagada(
         modulo: "COMPROBANTES",
         accion: "MARCAR_PAGADA",
         entidadId: String(id),
-        datosNuevos: JSON.stringify({ estado: "PAGADA" }),
+        datosNuevos: JSON.stringify({ estado: "PAGADA", fechaPago: fecha }),
       },
     });
 
