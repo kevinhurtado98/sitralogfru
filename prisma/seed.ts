@@ -28,7 +28,7 @@ async function main() {
   });
 
   // ─── Usuario admin ───────────────────────────────────────────────────────
-  const hash = await bcrypt.hash("admin123", 12);
+  const hash = await bcrypt.hash("12345678", 12);
 
   await prisma.user.upsert({
     where: { email: "admin@fruchincha.pe" },
@@ -42,7 +42,7 @@ async function main() {
     },
   });
 
-  console.log("Seed completado: roles + admin@fruchincha.pe / admin123");
+  console.log("Seed completado: roles + admin@fruchincha.pe / 12345678");
 }
 
 main()
