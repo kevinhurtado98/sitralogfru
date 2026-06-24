@@ -129,9 +129,6 @@ importers:
         specifier: ^4.4.3
         version: 4.4.3
     devDependencies:
-      '@prisma/engines':
-        specifier: 7.8.0
-        version: 7.8.0
       '@tailwindcss/postcss':
         specifier: ^4
         version: 4.3.0
@@ -150,9 +147,6 @@ importers:
       '@types/react-dom':
         specifier: ^19
         version: 19.2.3(@types/react@19.2.15)
-      esbuild:
-        specifier: ^0.28.0
-        version: 0.28.0
       eslint:
         specifier: ^9
         version: 9.39.4(jiti@2.7.0)

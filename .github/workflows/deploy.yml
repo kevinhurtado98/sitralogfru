@@ -25,12 +25,21 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Construir y publicar imagen
+      - name: Construir y publicar imagen de la app
         uses: docker/build-push-action@v5
         with:
           context: .
+          file: Dockerfile
           push: true
           tags: ${{ env.IMAGE }}:latest
+
+      - name: Construir y publicar imagen de migraciones
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile.migrate
+          push: true
+          tags: ${{ env.IMAGE }}:migrate
 
       - name: Desplegar en VPS
         uses: appleboy/ssh-action@v1
@@ -53,8 +62,14 @@ jobs:
                     END; \
                   CREATE DATABASE sitralogfru"
 
-            # 3. Arrancar nueva imagen
-            # El entrypoint aplica prisma db push + seed automáticamente antes de iniciar la app
+            # 3. Aplicar schema y seed con imagen dedicada
+            docker pull ${{ env.IMAGE }}:migrate
+            docker run --rm \
+              --add-host=host.docker.internal:host-gateway \
+              --env-file /opt/docker-envs/sitralogfru/.env \
+              ${{ env.IMAGE }}:migrate
+
+            # 4. Arrancar la app
             docker pull ${{ env.IMAGE }}:latest
             docker run -d \
               --name sitralogfru \
