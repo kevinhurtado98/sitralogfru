@@ -34,6 +34,7 @@ export function GestionarUsuariosView({ usuarios: inicial }: { usuarios: Usuario
   const [rol, setRol]                   = useState<Rol>('ASISTENTE')
   const [emailError, setEmailError]     = useState('')
   const [enviarCorreo, setEnviarCorreo] = useState(true)
+  const [notificaciones, setNotificaciones] = useState(true)
   const [pending, startTransition]      = useTransition()
 
   // Confirm dialogs
@@ -49,12 +50,12 @@ export function GestionarUsuariosView({ usuarios: inicial }: { usuarios: Usuario
 
   function abrirCrear() {
     setNombres(''); setApellidos(''); setEmail(''); setRol('ASISTENTE')
-    setEmailError(''); setEditTarget(null); setEnviarCorreo(true); setMode('crear')
+    setEmailError(''); setEditTarget(null); setEnviarCorreo(true); setNotificaciones(true); setMode('crear')
   }
 
   function abrirEditar(u: UsuarioRow) {
     setNombres(u.nombres); setApellidos(u.apellidos); setEmail(u.email); setRol(u.rol as Rol)
-    setEmailError(''); setEditTarget(u); setMode('editar')
+    setEmailError(''); setEditTarget(u); setNotificaciones(u.notificaciones); setMode('editar')
   }
 
   function handleEmailChange(v: string) {
@@ -67,7 +68,7 @@ export function GestionarUsuariosView({ usuarios: inicial }: { usuarios: Usuario
     setEmailError('')
     startTransition(async () => {
       if (mode === 'crear') {
-        const res = await crearUsuario({ nombres: nombres.trim(), apellidos: apellidos.trim(), email: email.trim(), rol, enviarCorreo })
+        const res = await crearUsuario({ nombres: nombres.trim(), apellidos: apellidos.trim(), email: email.trim(), rol, enviarCorreo, notificaciones })
         if (!res.ok) { setEmailError(res.error); return }
         setUsuarios(prev => [...prev, res.usuario])
         toast.success('Usuario creado correctamente')
@@ -80,7 +81,7 @@ export function GestionarUsuariosView({ usuarios: inicial }: { usuarios: Usuario
         return
       }
       if (mode === 'editar' && editTarget) {
-        const res = await editarUsuario(editTarget.id, { nombres: nombres.trim(), apellidos: apellidos.trim(), email: email.trim(), rol })
+        const res = await editarUsuario(editTarget.id, { nombres: nombres.trim(), apellidos: apellidos.trim(), email: email.trim(), rol, notificaciones })
         if (!res.ok) { setEmailError(res.error); return }
         setUsuarios(prev => prev.map(u => u.id === editTarget.id ? res.usuario : u))
         toast.success('Usuario actualizado')
@@ -160,6 +161,13 @@ export function GestionarUsuariosView({ usuarios: inicial }: { usuarios: Usuario
                 </select>
               </div>
             </div>
+
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', userSelect: 'none' }}>
+              <input type="checkbox" checked={notificaciones} onChange={e => setNotificaciones(e.target.checked)}
+                style={{ width: 14, height: 14, cursor: 'pointer', accentColor: '#1a1a18' }}
+              />
+              <span style={{ fontSize: 12, color: 'var(--t1)' }}>Notificaciones activas</span>
+            </label>
 
             {mode === 'crear' && (
               <div style={{ background: 'var(--bg2)', border: '1px solid var(--bl)', borderRadius: 'var(--rm)', padding: '13px 15px', marginTop: emailError ? 6 : 0 }}>

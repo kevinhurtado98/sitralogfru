@@ -33,7 +33,7 @@ model User {
   password       String   @db.NVarChar(200)
   rolId          Int
   activo         Boolean  @default(true)
-  notificaciones Boolean  @default(false)
+  notificaciones Boolean  @default(true)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 

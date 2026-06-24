@@ -1,4 +1,5 @@
-// Mecanismo de alertas por correo usando Brevo (ex Sendinblue) como proveedor SMTP
+// Mecanismo de alertas por correo usando Resend como proveedor
+import { Resend } from "resend";
 import { render } from "@react-email/render";
 import { BienvenidaEmail } from "@/emails/BienvenidaEmail";
 import { RequerimientosPendientesEmail } from "@/emails/RequerimientosPendientesEmail";
@@ -6,11 +7,17 @@ import type { RequerimientoEmailItem } from "@/emails/RequerimientosPendientesEm
 import { FacturasVencidasEmail } from "@/emails/FacturasVencidasEmail";
 import type { FacturaEmailItem } from "@/emails/FacturasVencidasEmail";
 
-const API_URL = "https://api.brevo.com/v3/smtp/email";
 const APP_URL = process.env.AUTH_URL ?? "http://localhost:3000";
 
 // Correo fijo que recibe todas las alertas automáticas del sistema
 const ALERTA_DESTINATARIO = "khurtado@fruchincha.com.pe";
+
+function getResendClient(): { resend: Resend; from: string } | null {
+  const apiKey = process.env.RESEND_API_KEY;
+  const from = process.env.RESEND_FROM;
+  if (!apiKey || !from) return null;
+  return { resend: new Resend(apiKey), from };
+}
 
 // Envía correo de bienvenida con las credenciales al nuevo usuario
 export async function sendWelcomeEmail(params: {
@@ -19,10 +26,8 @@ export async function sendWelcomeEmail(params: {
   correo: string;
   contrasena: string;
 }): Promise<{ ok: true } | { ok: false; error: string }> {
-  const apiKey = process.env.BREVO_API_KEY;
-  const from = process.env.BREVO_FROM;
-
-  if (!apiKey || !from)
+  const client = getResendClient();
+  if (!client)
     return { ok: false, error: "Credenciales de email no configuradas" };
 
   try {
@@ -36,28 +41,14 @@ export async function sendWelcomeEmail(params: {
       }),
     );
 
-    const res = await fetch(API_URL, {
-      method: "POST",
-      headers: {
-        "api-key": apiKey,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        sender: { name: "SITRALOGFRU", email: from },
-        to: [{ email: params.correo }],
-        subject: "Bienvenido a SITRALOGFRU — tus credenciales de acceso",
-        htmlContent: html,
-      }),
+    const { error } = await client.resend.emails.send({
+      from: `SITRALOGFRU <${client.from}>`,
+      to: [params.correo],
+      subject: "Bienvenido a SITRALOGFRU — tus credenciales de acceso",
+      html,
     });
 
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      return {
-        ok: false,
-        error: (err as { message?: string }).message ?? `Error ${res.status}`,
-      };
-    }
-
+    if (error) return { ok: false, error: error.message };
     return { ok: true };
   } catch (e: unknown) {
     return {
@@ -72,10 +63,8 @@ export async function sendRequerimientosPendientesEmail(params: {
   requerimientos: RequerimientoEmailItem[];
   destinatario?: string;
 }): Promise<{ ok: true } | { ok: false; error: string }> {
-  const apiKey = process.env.BREVO_API_KEY;
-  const from = process.env.BREVO_FROM;
-
-  if (!apiKey || !from)
+  const client = getResendClient();
+  if (!client)
     return { ok: false, error: "Credenciales de email no configuradas" };
 
   try {
@@ -86,28 +75,14 @@ export async function sendRequerimientosPendientesEmail(params: {
       }),
     );
 
-    const res = await fetch(API_URL, {
-      method: "POST",
-      headers: {
-        "api-key": apiKey,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        sender: { name: "SITRALOGFRU", email: from },
-        to: [{ email: params.destinatario ?? ALERTA_DESTINATARIO }],
-        subject: "Requerimientos Pendientes de Atención",
-        htmlContent: html,
-      }),
+    const { error } = await client.resend.emails.send({
+      from: `SITRALOGFRU <${client.from}>`,
+      to: [params.destinatario ?? ALERTA_DESTINATARIO],
+      subject: "Requerimientos Pendientes de Atención",
+      html,
     });
 
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      return {
-        ok: false,
-        error: (err as { message?: string }).message ?? `Error ${res.status}`,
-      };
-    }
-
+    if (error) return { ok: false, error: error.message };
     return { ok: true };
   } catch (e: unknown) {
     return {
@@ -122,10 +97,8 @@ export async function sendFacturasVencidasEmail(params: {
   facturas: FacturaEmailItem[];
   destinatario?: string;
 }): Promise<{ ok: true } | { ok: false; error: string }> {
-  const apiKey = process.env.BREVO_API_KEY;
-  const from = process.env.BREVO_FROM;
-
-  if (!apiKey || !from)
+  const client = getResendClient();
+  if (!client)
     return { ok: false, error: "Credenciales de email no configuradas" };
 
   try {
@@ -136,28 +109,14 @@ export async function sendFacturasVencidasEmail(params: {
       }),
     );
 
-    const res = await fetch(API_URL, {
-      method: "POST",
-      headers: {
-        "api-key": apiKey,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        sender: { name: "SITRALOGFRU", email: from },
-        to: [{ email: params.destinatario ?? ALERTA_DESTINATARIO }],
-        subject: "Facturas Vencidas sin pago Generado",
-        htmlContent: html,
-      }),
+    const { error } = await client.resend.emails.send({
+      from: `SITRALOGFRU <${client.from}>`,
+      to: [params.destinatario ?? ALERTA_DESTINATARIO],
+      subject: "Facturas Vencidas sin pago Generado",
+      html,
     });
 
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      return {
-        ok: false,
-        error: (err as { message?: string }).message ?? `Error ${res.status}`,
-      };
-    }
-
+    if (error) return { ok: false, error: error.message };
     return { ok: true };
   } catch (e: unknown) {
     return {

@@ -1,7 +1,14 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { differenceInCalendarDays } from 'date-fns'
+import { differenceInCalendarDays, addDays } from 'date-fns'
 import { sendRequerimientosPendientesEmail } from '@/lib/email'
+
+// Calcula el plazo límite de atención: usa la fecha estimada manual si existe,
+// si no, lo deriva de la prioridad — Alta: mismo día de la solicitud, Media: +3 días
+function calcularFechaLimite(r: { fechaSolicitud: Date; prioridad: string; fechaEstimadaAtencion: Date | null }): Date {
+  if (r.fechaEstimadaAtencion) return r.fechaEstimadaAtencion
+  return r.prioridad === 'ALTA' ? r.fechaSolicitud : addDays(r.fechaSolicitud, 3)
+}
 
 export async function GET(request: Request) {
   // Vercel crons send Authorization: Bearer <CRON_SECRET>
@@ -16,17 +23,13 @@ export async function GET(request: Request) {
   const hoy = new Date()
   hoy.setHours(0, 0, 0, 0)
 
-  // 1. Requerimientos PENDIENTE con fecha estimada vencida → NO_ATENDIDO
-  const vencidos = await prisma.requerimiento.findMany({
-    where: {
-      estado:                'PENDIENTE',
-      fechaEstimadaAtencion: { lt: hoy },
-    },
-    include: {
-      area:        { select: { nombre: true } },
-      responsable: { select: { nombres: true, apellidos: true } },
-    },
+  // 1. Requerimientos PENDIENTE cuyo plazo (manual o por prioridad) ya pasó → NO_ATENDIDO
+  const pendientes = await prisma.requerimiento.findMany({
+    where: { estado: 'PENDIENTE' },
+    select: { id: true, fechaSolicitud: true, prioridad: true, fechaEstimadaAtencion: true },
   })
+
+  const vencidos = pendientes.filter((r) => calcularFechaLimite(r) < hoy)
 
   if (vencidos.length > 0) {
     await Promise.all(
@@ -35,7 +38,7 @@ export async function GET(request: Request) {
           where: { id: r.id },
           data: {
             estado:      'NO_ATENDIDO',
-            diasRetraso: differenceInCalendarDays(hoy, r.fechaEstimadaAtencion!),
+            diasRetraso: differenceInCalendarDays(hoy, calcularFechaLimite(r)),
           },
         })
       )
@@ -44,11 +47,8 @@ export async function GET(request: Request) {
 
   // 2. Requerimientos ya en NO_ATENDIDO → actualizar diasRetraso
   const yaNoAtendidos = await prisma.requerimiento.findMany({
-    where: {
-      estado:                'NO_ATENDIDO',
-      fechaEstimadaAtencion: { not: null, lt: hoy },
-    },
-    select: { id: true, fechaEstimadaAtencion: true },
+    where: { estado: 'NO_ATENDIDO' },
+    select: { id: true, fechaSolicitud: true, prioridad: true, fechaEstimadaAtencion: true },
   })
 
   if (yaNoAtendidos.length > 0) {
@@ -56,48 +56,57 @@ export async function GET(request: Request) {
       yaNoAtendidos.map((r) =>
         prisma.requerimiento.update({
           where: { id: r.id },
-          data: { diasRetraso: differenceInCalendarDays(hoy, r.fechaEstimadaAtencion!) },
+          data: { diasRetraso: differenceInCalendarDays(hoy, calcularFechaLimite(r)) },
         })
       )
     )
   }
 
-  // 3. Enviar email si hay requerimientos NO_ATENDIDO
-  const totalNoAtendidos = vencidos.length + yaNoAtendidos.length
-  let emailEnviado = false
-  let emailError: string | undefined
+  // 3. Enviar a cada responsable solo sus propios requerimientos no atendidos
+  let correosEnviados = 0
+  const erroresEnvio: string[] = []
 
-  if (totalNoAtendidos > 0) {
+  if (vencidos.length + yaNoAtendidos.length > 0) {
     const paraEmail = await prisma.requerimiento.findMany({
       where: { estado: 'NO_ATENDIDO' },
       include: {
         area:        { select: { nombre: true } },
-        responsable: { select: { nombres: true, apellidos: true } },
+        responsable: { select: { correo: true, nombres: true, apellidos: true } },
       },
       orderBy: { diasRetraso: 'desc' },
     })
 
-    const result = await sendRequerimientosPendientesEmail({
-      requerimientos: paraEmail.map((r) => ({
-        id:             r.id,
-        area:           r.area.nombre,
-        responsable:    `${r.responsable.nombres} ${r.responsable.apellidos}`.trim(),
-        prioridad:      r.prioridad,
-        diasRetraso:    r.diasRetraso,
-        descripcion:    r.descripcion,
-        fechaSolicitud: r.fechaSolicitud,
-      })),
-    })
+    const porResponsable = new Map<string, typeof paraEmail>()
+    for (const r of paraEmail) {
+      const grupo = porResponsable.get(r.responsable.correo) ?? []
+      grupo.push(r)
+      porResponsable.set(r.responsable.correo, grupo)
+    }
 
-    emailEnviado = result.ok
-    if (!result.ok) emailError = result.error
+    for (const [correo, grupo] of porResponsable) {
+      const result = await sendRequerimientosPendientesEmail({
+        destinatario: correo,
+        requerimientos: grupo.map((r) => ({
+          id:             r.id,
+          area:           r.area.nombre,
+          responsable:    `${r.responsable.nombres} ${r.responsable.apellidos}`.trim(),
+          prioridad:      r.prioridad,
+          diasRetraso:    r.diasRetraso,
+          descripcion:    r.descripcion,
+          fechaSolicitud: r.fechaSolicitud,
+        })),
+      })
+
+      if (result.ok) correosEnviados++
+      else erroresEnvio.push(`${correo}: ${result.error}`)
+    }
   }
 
   return NextResponse.json({
     ok:             true,
     nuevosVencidos: vencidos.length,
     actualizados:   yaNoAtendidos.length,
-    emailEnviado,
-    ...(emailError ? { emailError } : {}),
+    correosEnviados,
+    ...(erroresEnvio.length > 0 ? { erroresEnvio } : {}),
   })
 }

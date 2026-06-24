@@ -40,9 +40,9 @@ async function getRolId(nombre: string): Promise<number | null> {
 type CrearResult = Ok & { emailEnviado?: boolean; emailError?: string }
 
 export async function crearUsuario(data: {
-  nombres: string; apellidos: string; email: string; rol: string; enviarCorreo?: boolean
+  nombres: string; apellidos: string; email: string; rol: string; enviarCorreo?: boolean; notificaciones?: boolean
 }): Promise<CrearResult | Err> {
-  const { enviarCorreo, ...rest } = data
+  const { enviarCorreo, notificaciones, ...rest } = data
   const parsed = schema.safeParse(rest)
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }
 
@@ -52,7 +52,7 @@ export async function crearUsuario(data: {
   try {
     const password = await bcrypt.hash(DEFAULT_PASSWORD, 10)
     const u = await prisma.user.create({
-      data: { nombres: parsed.data.nombres, apellidos: parsed.data.apellidos, email: parsed.data.email, password, rolId },
+      data: { nombres: parsed.data.nombres, apellidos: parsed.data.apellidos, email: parsed.data.email, password, rolId, notificaciones: notificaciones ?? true },
       select: userSelect,
     })
     revalidatePath('/configuracion')
@@ -73,9 +73,10 @@ export async function crearUsuario(data: {
 }
 
 export async function editarUsuario(id: number, data: {
-  nombres: string; apellidos: string; email: string; rol: string
+  nombres: string; apellidos: string; email: string; rol: string; notificaciones: boolean
 }): Promise<Ok | Err> {
-  const parsed = schema.safeParse(data)
+  const { notificaciones, ...rest } = data
+  const parsed = schema.safeParse(rest)
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }
 
   const rolId = await getRolId(parsed.data.rol)
@@ -84,7 +85,7 @@ export async function editarUsuario(id: number, data: {
   try {
     const u = await prisma.user.update({
       where: { id },
-      data:  { nombres: parsed.data.nombres, apellidos: parsed.data.apellidos, email: parsed.data.email, rolId },
+      data:  { nombres: parsed.data.nombres, apellidos: parsed.data.apellidos, email: parsed.data.email, rolId, notificaciones },
       select: userSelect,
     })
     revalidatePath('/configuracion')
