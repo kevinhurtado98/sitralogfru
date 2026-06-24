@@ -1,14 +1,30 @@
 'use client'
 
-import { useActionState } from 'react'
+import { useActionState, useState } from 'react'
 import { login } from '@/lib/actions/auth'
 import { IconAlertCircle, IconLoader2 } from '@tabler/icons-react'
 
+const REMEMBER_KEY = 'sitralogfru:remembered-email'
+
+function leerCorreoRecordado() {
+  return typeof window !== 'undefined' ? localStorage.getItem(REMEMBER_KEY) ?? '' : ''
+}
+
 export function LoginForm() {
   const [state, action, isPending] = useActionState(login, undefined)
+  const [email, setEmail] = useState(leerCorreoRecordado)
+  const [recordar, setRecordar] = useState(true)
+
+  function handleSubmit() {
+    if (recordar && email) {
+      localStorage.setItem(REMEMBER_KEY, email)
+    } else {
+      localStorage.removeItem(REMEMBER_KEY)
+    }
+  }
 
   return (
-    <form action={action} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <form action={action} onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {/* Email */}
       <div className="fi">
         <label style={{ textTransform: 'none', fontSize: 13, letterSpacing: 0, fontWeight: 500, color: 'var(--t2)' }}>
@@ -17,6 +33,8 @@ export function LoginForm() {
         <input
           name="email"
           type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
           placeholder="usuario@fruchincha.pe"
           autoComplete="email"
           required
@@ -44,6 +62,17 @@ export function LoginForm() {
           <span style={{ fontSize: 11, color: 'var(--red)' }}>{state.errors.password[0]}</span>
         )}
       </div>
+
+      {/* Recordar usuario */}
+      <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', userSelect: 'none' }}>
+        <input
+          type="checkbox"
+          checked={recordar}
+          onChange={(e) => setRecordar(e.target.checked)}
+          style={{ width: 14, height: 14, cursor: 'pointer', accentColor: '#1a1a18' }}
+        />
+        <span style={{ fontSize: 12, color: 'var(--t2)' }}>Recordar mi usuario</span>
+      </label>
 
       {/* Error general */}
       {state?.message && (

@@ -23,6 +23,7 @@ export default async function DashboardLayout({
 
   const name = session.user?.name ?? "Usuario";
   const email = session.user?.email ?? "";
+  const role = session.user?.role ?? "ASISTENTE";
   const initials = getInitials(name);
 
   return (
@@ -36,7 +37,7 @@ export default async function DashboardLayout({
         minWidth: 0,
       }}
     >
-      <Sidebar user={{ name, email, initials }} />
+      <Sidebar user={{ name, email, initials }} role={role} />
       <div
         style={{
           flex: 1,

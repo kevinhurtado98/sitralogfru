@@ -4,7 +4,7 @@
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
-import { auth } from '@/lib/auth'
+import { getSessionUserId, registrarAuditoria } from '@/lib/audit'
 import type { EstadoRequerimiento } from '@/lib/types'
 
 type Err = { ok: false; error: string }
@@ -19,17 +19,6 @@ const crearSchema = z.object({
   descripcion:           z.string().min(1).max(1000),
   fechaEstimadaAtencion: z.string().optional(),
 })
-
-async function getSessionUserId(): Promise<number | null> {
-  const session = await auth()
-  const rawId = session?.user?.id ?? null
-  if (rawId) return Number(rawId)
-  if (session?.user?.email) {
-    const user = await prisma.user.findUnique({ where: { email: session.user.email }, select: { id: true } })
-    return user?.id ?? null
-  }
-  return null
-}
 
 // Registra un nuevo requerimiento en la BD después de validar los datos con Zod
 export async function crearRequerimiento(data: {
@@ -66,17 +55,9 @@ export async function crearRequerimiento(data: {
       },
     })
 
-    await prisma.auditLog.create({
-      data: {
-        userId:    creadoPorId,
-        modulo:    'REQUERIMIENTOS',
-        accion:    'CREAR_REQUERIMIENTO',
-        entidadId: String(req.id),
-        datosNuevos: JSON.stringify({
-          areaId: req.areaId, responsableId: req.responsableId,
-          prioridad: req.prioridad, tipo: req.tipo,
-        }),
-      },
+    await registrarAuditoria(creadoPorId, 'REQUERIMIENTOS', 'CREAR_REQUERIMIENTO', String(req.id), undefined, {
+      areaId: req.areaId, responsableId: req.responsableId,
+      prioridad: req.prioridad, tipo: req.tipo,
     })
 
     revalidatePath('/requerimientos')
@@ -125,16 +106,10 @@ export async function cambiarEstadoRequerimiento(
       },
     })
 
-    await prisma.auditLog.create({
-      data: {
-        userId,
-        modulo:          'REQUERIMIENTOS',
-        accion:          'CAMBIAR_ESTADO',
-        entidadId:       String(id),
-        datosAnteriores: JSON.stringify({ estado: anterior?.estado }),
-        datosNuevos:     JSON.stringify({ estado, observacion: obs, imagenUrl }),
-      },
-    })
+    await registrarAuditoria(userId, 'REQUERIMIENTOS', 'CAMBIAR_ESTADO', String(id),
+      { estado: anterior?.estado },
+      { estado, observacion: obs, imagenUrl },
+    )
 
     revalidatePath('/requerimientos')
     revalidatePath(`/requerimientos/${id}`)

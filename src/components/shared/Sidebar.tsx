@@ -25,18 +25,23 @@ const NAV = [
   { label: 'Módulos', items: [
     { href: '/comprobantes',   label: 'Comprobantes',    icon: IconFileText },
     { href: '/requerimientos', label: 'Requerimientos',  icon: IconClipboardList },
-    { href: '/auditoria',      label: 'Auditorías',      icon: IconShieldCheck },
-    { href: '/configuracion',  label: 'Configuración',   icon: IconSettings },
+    { href: '/auditoria',      label: 'Auditorías',      icon: IconShieldCheck,  soloAdmin: true },
+    { href: '/configuracion',  label: 'Configuración',   icon: IconSettings,    soloAdmin: true },
   ]},
 ]
 
 interface SidebarProps {
   user: { name: string; email: string; initials: string }
+  role: string
 }
 
-export function Sidebar({ user }: SidebarProps) {
+export function Sidebar({ user, role }: SidebarProps) {
   const pathname = usePathname()
   const [logoutOpen, setLogoutOpen] = useState(false)
+  const nav = NAV.map((section) => ({
+    ...section,
+    items: section.items.filter((item) => !item.soloAdmin || role === 'ADMIN'),
+  }))
 
   return (
     <aside
@@ -67,7 +72,7 @@ export function Sidebar({ user }: SidebarProps) {
 
       {/* Nav */}
       <div style={{ padding: '8px 0', overflowY: 'auto', flex: 1 }}>
-        {NAV.map((section) => (
+        {nav.map((section) => (
           <div key={section.label}>
             <div
               style={{

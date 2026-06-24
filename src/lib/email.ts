@@ -6,6 +6,7 @@ import { RequerimientosPendientesEmail } from "@/emails/RequerimientosPendientes
 import type { RequerimientoEmailItem } from "@/emails/RequerimientosPendientesEmail";
 import { FacturasVencidasEmail } from "@/emails/FacturasVencidasEmail";
 import type { FacturaEmailItem } from "@/emails/FacturasVencidasEmail";
+import { CodigoRecuperacionEmail } from "@/emails/CodigoRecuperacionEmail";
 
 const APP_URL = process.env.AUTH_URL ?? "http://localhost:3000";
 
@@ -88,6 +89,43 @@ export async function sendRequerimientosPendientesEmail(params: {
     return {
       ok: false,
       error: (e as Error).message ?? "Error al enviar el correo de alerta",
+    };
+  }
+}
+
+// Envía el código de 6 dígitos para recuperación de contraseña por autoservicio
+export async function sendCodigoRecuperacionEmail(params: {
+  nombres: string;
+  apellidos: string;
+  correo: string;
+  codigo: string;
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  const client = getResendClient();
+  if (!client)
+    return { ok: false, error: "Credenciales de email no configuradas" };
+
+  try {
+    const html = await render(
+      CodigoRecuperacionEmail({
+        nombres: params.nombres,
+        apellidos: params.apellidos,
+        codigo: params.codigo,
+      }),
+    );
+
+    const { error } = await client.resend.emails.send({
+      from: `SITRALOGFRU <${client.from}>`,
+      to: [params.correo],
+      subject: "Código de recuperación de contraseña",
+      html,
+    });
+
+    if (error) return { ok: false, error: error.message };
+    return { ok: true };
+  } catch (e: unknown) {
+    return {
+      ok: false,
+      error: (e as Error).message ?? "Error al enviar el código de recuperación",
     };
   }
 }

@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import bcrypt from 'bcryptjs'
 import { z } from 'zod'
+import { registrarAuditoria } from '@/lib/audit'
 
 const schema = z.object({
   actual:    z.string().min(1, 'Ingresa tu contraseña actual'),
@@ -36,6 +37,8 @@ export async function cambiarPassword(data: {
 
   const hash = await bcrypt.hash(parsed.data.nueva, 10)
   await prisma.user.update({ where: { id: user.id }, data: { password: hash } })
+
+  await registrarAuditoria(user.id, 'AUTH', 'CAMBIAR_PASSWORD', String(user.id))
 
   return { ok: true }
 }

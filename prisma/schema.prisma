@@ -43,8 +43,34 @@ model User {
   requerimientosAtiende   Requerimiento[]                @relation("RequerimientoAtendidoPor")
   auditLogs               AuditLog[]
   historialRequerimientos HistorialEstadoRequerimiento[]
+  passwordResetCodes      PasswordResetCode[]
 
   @@map("Usuarios")
+}
+
+// Código de 6 dígitos (hasheado) para recuperación de contraseña por autoservicio
+model PasswordResetCode {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  codigoHash String   @db.NVarChar(200)
+  expiresAt  DateTime
+  intentos   Int      @default(0)
+  usado      Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("PasswordResetCodes")
+}
+
+// Bitácora de solicitudes de recuperación por correo (exista o no la cuenta), usada solo para limitar a 3 por día
+model PasswordResetRequest {
+  id        Int      @id @default(autoincrement())
+  email     String   @db.NVarChar(200)
+  createdAt DateTime @default(now())
+
+  @@index([email, createdAt])
+  @@map("PasswordResetRequests")
 }
 
 // ─── CONFIGURACIÓN ───────────────────────────────────────────────────────────

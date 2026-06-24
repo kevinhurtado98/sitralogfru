@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { parseFacturaXML, XMLParseError } from "@/lib/xml-parser";
 import { calcularSemanaPago } from "@/lib/semana-pago";
 import { addDays, differenceInDays } from "date-fns";
+import { registrarAuditoria } from "@/lib/audit";
 
 type RespuestaUpload =
   | {
@@ -159,20 +160,12 @@ export async function POST(
       console.warn("[upload:xml-storage]", fsErr);
     }
 
-    await prisma.auditLog.create({
-      data: {
-        userId: Number(session.user.id),
-        modulo: "COMPROBANTES",
-        accion: "IMPORTAR_XML",
-        entidadId: String(factura.id),
-        datosNuevos: JSON.stringify({
-          serie: datos.serie,
-          numero: datos.numero,
-          proveedor: datos.proveedor,
-          monto: datos.monto,
-          archivo: archivo.name,
-        }),
-      },
+    await registrarAuditoria(Number(session.user.id), "COMPROBANTES", "IMPORTAR_XML", String(factura.id), undefined, {
+      serie: datos.serie,
+      numero: datos.numero,
+      proveedor: datos.proveedor,
+      monto: datos.monto,
+      archivo: archivo.name,
     });
 
     return NextResponse.json({

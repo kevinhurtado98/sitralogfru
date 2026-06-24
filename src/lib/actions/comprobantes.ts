@@ -3,10 +3,10 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { auth } from "@/lib/auth";
 import { z } from "zod";
 import { differenceInDays, getISOWeek } from "date-fns";
 import { calcularSemanaPago } from "@/lib/semana-pago";
+import { getSessionUserId, registrarAuditoria } from "@/lib/audit";
 
 type Err = { ok: false; error: string };
 
@@ -26,21 +26,6 @@ const crearManualSchema = z.object({
   ordenCompra: z.string().max(50).optional(),
   notas: z.string().optional(),
 });
-
-// Obtiene el ID del usuario autenticado desde la sesión JWT
-async function getSessionUserId(): Promise<number | null> {
-  const session = await auth();
-  const rawId = session?.user?.id ?? null;
-  if (rawId) return Number(rawId);
-  if (session?.user?.email) {
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-      select: { id: true },
-    });
-    return user?.id ?? null;
-  }
-  return null;
-}
 
 // Registra una factura manualmente cuando el proveedor no envía XML
 export async function crearFacturaManual(
@@ -100,19 +85,11 @@ export async function crearFacturaManual(
       },
     });
 
-    await prisma.auditLog.create({
-      data: {
-        userId: creadoPorId,
-        modulo: "COMPROBANTES",
-        accion: "CREAR_MANUAL",
-        entidadId: String(factura.id),
-        datosNuevos: JSON.stringify({
-          serie: d.serie,
-          numero: d.numero,
-          proveedor: d.proveedor,
-          monto: d.monto,
-        }),
-      },
+    await registrarAuditoria(creadoPorId, "COMPROBANTES", "CREAR_MANUAL", String(factura.id), undefined, {
+      serie: d.serie,
+      numero: d.numero,
+      proveedor: d.proveedor,
+      monto: d.monto,
     });
 
     revalidatePath("/comprobantes");
@@ -188,16 +165,7 @@ export async function actualizarFactura(
       },
     });
 
-    await prisma.auditLog.create({
-      data: {
-        userId,
-        modulo: "COMPROBANTES",
-        accion: "EDITAR",
-        entidadId: String(id),
-        datosAnteriores: JSON.stringify(anterior),
-        datosNuevos: JSON.stringify(data),
-      },
-    });
+    await registrarAuditoria(userId, "COMPROBANTES", "EDITAR", String(id), anterior ?? undefined, data);
 
     revalidatePath("/comprobantes");
     revalidatePath(`/comprobantes/${id}`);
@@ -224,15 +192,7 @@ export async function marcarComoPagada(
       data: { estado: "PAGADA", fechaPago: fecha },
     });
 
-    await prisma.auditLog.create({
-      data: {
-        userId,
-        modulo: "COMPROBANTES",
-        accion: "MARCAR_PAGADA",
-        entidadId: String(id),
-        datosNuevos: JSON.stringify({ estado: "PAGADA", fechaPago: fecha }),
-      },
-    });
+    await registrarAuditoria(userId, "COMPROBANTES", "MARCAR_PAGADA", String(id), undefined, { estado: "PAGADA", fechaPago: fecha });
 
     revalidatePath("/comprobantes");
     revalidatePath(`/comprobantes/${id}`);
@@ -256,15 +216,7 @@ export async function eliminarFactura(id: number): Promise<{ ok: true } | Err> {
 
     await prisma.factura.delete({ where: { id } });
 
-    await prisma.auditLog.create({
-      data: {
-        userId,
-        modulo: "COMPROBANTES",
-        accion: "ELIMINAR",
-        entidadId: String(id),
-        datosAnteriores: JSON.stringify(anterior),
-      },
-    });
+    await registrarAuditoria(userId, "COMPROBANTES", "ELIMINAR", String(id), anterior ?? undefined);
 
     revalidatePath("/comprobantes");
     return { ok: true };
@@ -300,18 +252,9 @@ export async function crearNotaCredito(
       },
     });
 
-    await prisma.auditLog.create({
-      data: {
-        userId,
-        modulo: "COMPROBANTES",
-        accion: "CREAR",
-        entidadId: String(facturaId),
-        datosNuevos: JSON.stringify({
-          tipo: "NOTA_CREDITO",
-          notaId: nota.id,
-          ...data,
-        }),
-      },
+    await registrarAuditoria(userId, "COMPROBANTES", "CREAR_NOTA_CREDITO", String(facturaId), undefined, {
+      notaId: nota.id,
+      ...data,
     });
 
     revalidatePath(`/comprobantes/${facturaId}`);
@@ -348,18 +291,9 @@ export async function crearNotaDebito(
       },
     });
 
-    await prisma.auditLog.create({
-      data: {
-        userId,
-        modulo: "COMPROBANTES",
-        accion: "CREAR",
-        entidadId: String(facturaId),
-        datosNuevos: JSON.stringify({
-          tipo: "NOTA_DEBITO",
-          notaId: nota.id,
-          ...data,
-        }),
-      },
+    await registrarAuditoria(userId, "COMPROBANTES", "CREAR_NOTA_DEBITO", String(facturaId), undefined, {
+      notaId: nota.id,
+      ...data,
     });
 
     revalidatePath(`/comprobantes/${facturaId}`);
@@ -387,15 +321,7 @@ export async function toggleRegistroContable(
       },
     });
 
-    await prisma.auditLog.create({
-      data: {
-        userId,
-        modulo: "COMPROBANTES",
-        accion: "REGISTRO_CONTABLE",
-        entidadId: String(id),
-        datosNuevos: JSON.stringify({ registradoContable: registrado }),
-      },
-    });
+    await registrarAuditoria(userId, "COMPROBANTES", "REGISTRO_CONTABLE", String(id), undefined, { registradoContable: registrado });
 
     revalidatePath("/comprobantes");
     return { ok: true };

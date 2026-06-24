@@ -377,6 +377,62 @@ body {
 }
 .bar-label { font-size: 10px; color: var(--t3); }
 
+/* ── DESKTOP-ONLY GATE ───────────────────────────────────────────────── */
+.dog {
+  display: none;
+}
+@media (max-width: 1024px) {
+  html, body { min-width: 0; overflow: hidden; }
+  .dog {
+    display: flex;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: var(--bg3);
+  }
+}
+.dog-card {
+  max-width: 340px;
+  width: 100%;
+  text-align: center;
+  background: var(--bg);
+  border: 1px solid var(--bl);
+  border-radius: var(--rl);
+  box-shadow: var(--sh);
+  padding: 32px 28px;
+}
+.dog-logo {
+  width: 34px; height: 34px;
+  background: var(--t1);
+  border-radius: var(--rm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+.dog-icons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.dog-card h1 {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  color: var(--t1);
+  margin-bottom: 8px;
+}
+.dog-card p {
+  font-size: 13px;
+  color: var(--t2);
+  line-height: 1.5;
+}
+
 /* ── TOAST ───────────────────────────────────────────────────────────── */
 .toast {
   position: fixed;

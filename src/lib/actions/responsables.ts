@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
+import { getSessionUserId, registrarAuditoria } from '@/lib/audit'
 
 type ResponsableData = {
   id: number; nombres: string; apellidos: string; correo: string
@@ -33,6 +34,12 @@ export async function crearResponsable(data: {
       include: { area: { select: { nombre: true, color: true, tc: true } } },
     })
     revalidatePath('/configuracion')
+
+    const actorId = await getSessionUserId()
+    if (actorId) await registrarAuditoria(actorId, 'CONFIGURACION', 'CREAR_RESPONSABLE', String(r.id), undefined, {
+      nombres: r.nombres, apellidos: r.apellidos, correo: r.correo, areaId: r.areaId,
+    })
+
     return {
       ok: true,
       responsable: {
@@ -48,8 +55,13 @@ export async function crearResponsable(data: {
 
 export async function eliminarResponsable(id: number): Promise<{ ok: true } | Err> {
   try {
+    const anterior = await prisma.responsable.findUnique({ where: { id }, select: { nombres: true, apellidos: true, correo: true, areaId: true } })
     await prisma.responsable.delete({ where: { id } })
     revalidatePath('/configuracion')
+
+    const actorId = await getSessionUserId()
+    if (actorId) await registrarAuditoria(actorId, 'CONFIGURACION', 'ELIMINAR_RESPONSABLE', String(id), anterior ?? undefined)
+
     return { ok: true }
   } catch {
     return { ok: false, error: 'Error al eliminar el responsable' }

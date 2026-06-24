@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import bcrypt from 'bcryptjs'
 import { sendWelcomeEmail } from '@/lib/email'
+import { getSessionUserId, registrarAuditoria } from '@/lib/audit'
 
 const DEFAULT_PASSWORD = '12345678'
 
@@ -57,6 +58,11 @@ export async function crearUsuario(data: {
     })
     revalidatePath('/configuracion')
 
+    const actorId = await getSessionUserId()
+    if (actorId) await registrarAuditoria(actorId, 'USUARIOS', 'CREAR_USUARIO', String(u.id), undefined, {
+      nombres: u.nombres, apellidos: u.apellidos, email: u.email, rol: u.rol.nombre,
+    })
+
     if (enviarCorreo) {
       const emailResult = await sendWelcomeEmail({
         nombres: u.nombres, apellidos: u.apellidos,
@@ -83,12 +89,20 @@ export async function editarUsuario(id: number, data: {
   if (!rolId) return { ok: false, error: 'Rol no válido' }
 
   try {
+    const anterior = await prisma.user.findUnique({ where: { id }, select: userSelect })
     const u = await prisma.user.update({
       where: { id },
       data:  { nombres: parsed.data.nombres, apellidos: parsed.data.apellidos, email: parsed.data.email, rolId, notificaciones },
       select: userSelect,
     })
     revalidatePath('/configuracion')
+
+    const actorId = await getSessionUserId()
+    if (actorId) await registrarAuditoria(actorId, 'USUARIOS', 'EDITAR_USUARIO', String(id),
+      anterior ? { nombres: anterior.nombres, apellidos: anterior.apellidos, email: anterior.email, rol: anterior.rol.nombre, notificaciones: anterior.notificaciones } : undefined,
+      { nombres: u.nombres, apellidos: u.apellidos, email: u.email, rol: u.rol.nombre, notificaciones: u.notificaciones },
+    )
+
     return { ok: true, usuario: mapUsuario(u) }
   } catch (e: unknown) {
     if ((e as { code?: string })?.code === 'P2002') return { ok: false, error: 'Ya existe un usuario con ese correo' }
@@ -98,8 +112,16 @@ export async function editarUsuario(id: number, data: {
 
 export async function toggleUsuarioActivo(id: number, activo: boolean): Promise<{ ok: true } | Err> {
   try {
+    const anterior = await prisma.user.findUnique({ where: { id }, select: { nombres: true, apellidos: true } })
     await prisma.user.update({ where: { id }, data: { activo } })
     revalidatePath('/configuracion')
+
+    const actorId = await getSessionUserId()
+    if (actorId) await registrarAuditoria(actorId, 'USUARIOS', activo ? 'ACTIVAR_USUARIO' : 'DESACTIVAR_USUARIO', String(id),
+      { activo: !activo },
+      { nombres: anterior?.nombres, apellidos: anterior?.apellidos, activo },
+    )
+
     return { ok: true }
   } catch {
     return { ok: false, error: 'Error al actualizar el usuario' }
@@ -110,6 +132,10 @@ export async function resetPassword(id: number): Promise<{ ok: true } | Err> {
   try {
     const password = await bcrypt.hash(DEFAULT_PASSWORD, 10)
     await prisma.user.update({ where: { id }, data: { password } })
+
+    const actorId = await getSessionUserId()
+    if (actorId) await registrarAuditoria(actorId, 'USUARIOS', 'RESET_PASSWORD_USUARIO', String(id))
+
     return { ok: true }
   } catch {
     return { ok: false, error: 'Error al resetear la contraseña' }

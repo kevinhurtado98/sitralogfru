@@ -1,9 +1,11 @@
 // Módulo de Auditoría: muestra el historial de acciones realizadas en el sistema
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useTransition, useEffect, useRef } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { format } from 'date-fns'
-import { IconCircleCheck, IconUpload, IconPencil, IconPlus, IconTrash, IconMail, IconSearch, IconSettings, IconCheck, IconBan } from '@tabler/icons-react'
+import { IconCircleCheck, IconUpload, IconPencil, IconPlus, IconTrash, IconMail, IconSearch, IconSettings, IconCheck, IconBan, IconChevronLeft, IconChevronRight } from '@tabler/icons-react'
+import { ENTIDAD_LABELS, CATEGORIA_LABELS } from '@/lib/auditoria-meta'
 
 interface AuditLog {
   id: number; modulo: string; accion: string; entidadId: string
@@ -23,65 +25,102 @@ const MODULO_STYLE: Record<string, { bg: string; color: string; icon: React.Reac
 
 // Íconos asignados a cada tipo de acción registrada en auditoría
 const ACCION_ICON: Record<string, React.ReactNode> = {
-  IMPORTAR_XML:      <IconUpload size={14} />,
-  CREAR:             <IconPlus size={14} />,
-  CREAR_REQUERIMIENTO: <IconPlus size={14} />,
-  CREAR_AREA:        <IconPlus size={14} />,
-  EDITAR:            <IconPencil size={14} />,
-  EDITAR_AREA:       <IconPencil size={14} />,
-  CAMBIAR_ESTADO:    <IconPencil size={14} />,
-  MARCAR_PAGADA:     <IconCircleCheck size={14} />,
-  ELIMINAR:          <IconTrash size={14} />,
-  NOTIFICACION:      <IconMail size={14} />,
-  REGISTRO_CONTABLE: <IconCircleCheck size={14} />,
-  ACTIVAR_AREA:      <IconCheck size={14} />,
-  DESACTIVAR_AREA:   <IconBan size={14} />,
+  IMPORTAR_XML:          <IconUpload size={14} />,
+  CREAR:                 <IconPlus size={14} />,
+  CREAR_REQUERIMIENTO:   <IconPlus size={14} />,
+  CREAR_AREA:            <IconPlus size={14} />,
+  CREAR_USUARIO:         <IconPlus size={14} />,
+  CREAR_RESPONSABLE:     <IconPlus size={14} />,
+  CREAR_NOTA_CREDITO:    <IconPlus size={14} />,
+  CREAR_NOTA_DEBITO:     <IconPlus size={14} />,
+  CREAR_MANUAL:          <IconPlus size={14} />,
+  EDITAR:                <IconPencil size={14} />,
+  EDITAR_AREA:           <IconPencil size={14} />,
+  EDITAR_USUARIO:        <IconPencil size={14} />,
+  CAMBIAR_ESTADO:        <IconPencil size={14} />,
+  CAMBIAR_PASSWORD:      <IconPencil size={14} />,
+  MARCAR_PAGADA:         <IconCircleCheck size={14} />,
+  ELIMINAR:              <IconTrash size={14} />,
+  ELIMINAR_RESPONSABLE:  <IconTrash size={14} />,
+  NOTIFICACION:          <IconMail size={14} />,
+  REGISTRO_CONTABLE:     <IconCircleCheck size={14} />,
+  ACTIVAR_AREA:          <IconCheck size={14} />,
+  DESACTIVAR_AREA:       <IconBan size={14} />,
+  ACTIVAR_USUARIO:       <IconCheck size={14} />,
+  DESACTIVAR_USUARIO:    <IconBan size={14} />,
+  RESET_PASSWORD_USUARIO: <IconPencil size={14} />,
 }
 
-// Agrupa las acciones en categorías para el filtro de tipo de acción
-const CATEGORIA_ACCION: Record<string, string> = {
-  CREAR: 'creacion', CREAR_REQUERIMIENTO: 'creacion', CREAR_AREA: 'creacion',
-  EDITAR: 'edicion', EDITAR_AREA: 'edicion', CAMBIAR_ESTADO: 'edicion',
-  ACTIVAR_AREA: 'edicion', DESACTIVAR_AREA: 'edicion',
-  REGISTRO_CONTABLE: 'edicion', MARCAR_PAGADA: 'edicion',
-  ELIMINAR: 'eliminacion',
-  IMPORTAR_XML: 'importacion',
-  NOTIFICACION: 'notificacion',
-}
+// Componente principal: muestra los logs con filtros por módulo, entidad, usuario, tipo y fecha, y paginación
+export function AuditoriaView({ logs, total, page, pageSize }: {
+  logs: AuditLog[]; total: number; page: number; pageSize: number
+}) {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const [, startTransition] = useTransition()
 
-// Componente principal: muestra los logs con filtros por módulo, usuario, tipo y fecha
-export function AuditoriaView({ logs }: { logs: AuditLog[] }) {
-  const [busqueda,     setBusqueda]     = useState('')
-  const [filtroModulo, setFiltroModulo] = useState('')
-  const [filtroAccion, setFiltroAccion] = useState('')
-  const [filtroDesde,  setFiltroDesde]  = useState('')
-  const [filtroHasta,  setFiltroHasta]  = useState('')
+  const [busqueda, setBusqueda] = useState(searchParams.get('usuario') ?? '')
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Filtra los logs aplicando todos los criterios seleccionados por el usuario
-  const filtrados = useMemo(() => {
-    let r = logs
-
-    if (busqueda) {
-      const q = busqueda.toLowerCase()
-      r = r.filter((l) => l.user.nombre.toLowerCase().includes(q) || l.user.email.toLowerCase().includes(q))
+  // Refleja los params ya enviados al router. useSearchParams() solo se actualiza cuando la
+  // navegación anterior termina de resolverse, así que si el usuario cambia dos filtros seguidos
+  // (p.ej. dos selects en rápida sucesión) el segundo cambio partiría de un searchParams stale y
+  // pisaría al primero. paramsRef se actualiza de forma síncrona en cada cambio que nosotros
+  // mismos disparamos; lastPushedRef guarda qué valor le mandamos al router para distinguir
+  // "todavía no aterriza nuestra propia navegación" de "el usuario navegó externamente" (atrás/adelante).
+  const paramsRef = useRef<URLSearchParams>(new URLSearchParams(searchParams.toString()))
+  const lastPushedRef = useRef<string | null>(null)
+  useEffect(() => {
+    const actual = searchParams.toString()
+    if (lastPushedRef.current === null || actual !== lastPushedRef.current) {
+      paramsRef.current = new URLSearchParams(actual)
+      lastPushedRef.current = actual
     }
-    if (filtroModulo) r = r.filter((l) => l.modulo === filtroModulo)
-    if (filtroAccion) r = r.filter((l) => CATEGORIA_ACCION[l.accion] === filtroAccion)
-    if (filtroDesde)  r = r.filter((l) => new Date(l.createdAt) >= new Date(filtroDesde))
-    if (filtroHasta) {
-      const hasta = new Date(filtroHasta)
-      hasta.setHours(23, 59, 59, 999)
-      r = r.filter((l) => new Date(l.createdAt) <= hasta)
+  }, [searchParams])
+
+  const filtroModulo  = searchParams.get('modulo')  ?? ''
+  const filtroEntidad = searchParams.get('entidad') ?? ''
+  const filtroTipo    = searchParams.get('tipo')    ?? ''
+  const filtroDesde   = searchParams.get('desde')   ?? ''
+  const filtroHasta   = searchParams.get('hasta')   ?? ''
+
+  // Construye la nueva URL a partir de los filtros vigentes, reseteando a la página 1
+  function actualizarFiltros(cambios: Record<string, string>) {
+    const params = paramsRef.current
+    for (const [k, v] of Object.entries(cambios)) {
+      if (v) params.set(k, v); else params.delete(k)
     }
-
-    return r
-  }, [logs, busqueda, filtroModulo, filtroAccion, filtroDesde, filtroHasta])
-
-  // Resetea todos los filtros activos al estado inicial
-  function limpiar() {
-    setBusqueda(''); setFiltroModulo(''); setFiltroAccion('')
-    setFiltroDesde(''); setFiltroHasta('')
+    params.delete('page')
+    const next = params.toString()
+    lastPushedRef.current = next
+    startTransition(() => router.push(`/auditoria?${next}`))
   }
+
+  // Debounce de la búsqueda por usuario para no navegar en cada tecla
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => {
+      if (busqueda !== (searchParams.get('usuario') ?? '')) actualizarFiltros({ usuario: busqueda })
+    }, 300)
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [busqueda])
+
+  function irAPagina(p: number) {
+    const params = paramsRef.current
+    params.set('page', String(p))
+    const next = params.toString()
+    lastPushedRef.current = next
+    startTransition(() => router.push(`/auditoria?${next}`))
+  }
+
+  function limpiar() {
+    setBusqueda('')
+    startTransition(() => router.push('/auditoria'))
+  }
+
+  const hayFiltros = !!(busqueda || filtroModulo || filtroEntidad || filtroTipo || filtroDesde || filtroHasta)
+  const totalPaginas = Math.max(1, Math.ceil(total / pageSize))
 
   return (
     <>
@@ -90,12 +129,22 @@ export function AuditoriaView({ logs }: { logs: AuditLog[] }) {
         <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <div className="fg">
             <label>Módulo</label>
-            <select value={filtroModulo} onChange={(e) => setFiltroModulo(e.target.value)}>
+            <select value={filtroModulo} onChange={(e) => actualizarFiltros({ modulo: e.target.value })}>
               <option value="">Todos</option>
               <option value="COMPROBANTES">Comprobantes</option>
               <option value="REQUERIMIENTOS">Requerimientos</option>
+              <option value="USUARIOS">Usuarios</option>
               <option value="CONFIGURACION">Configuración</option>
               <option value="AUTH">Auth</option>
+            </select>
+          </div>
+          <div className="fg" style={{ maxWidth: 160 }}>
+            <label>Entidad</label>
+            <select value={filtroEntidad} onChange={(e) => actualizarFiltros({ entidad: e.target.value })}>
+              <option value="">Todas</option>
+              {Object.entries(ENTIDAD_LABELS).map(([valor, label]) => (
+                <option key={valor} value={valor}>{label}</option>
+              ))}
             </select>
           </div>
           <div className="fg">
@@ -104,34 +153,30 @@ export function AuditoriaView({ logs }: { logs: AuditLog[] }) {
           </div>
           <div className="fg" style={{ maxWidth: 150 }}>
             <label>Tipo acción</label>
-            <select value={filtroAccion} onChange={(e) => setFiltroAccion(e.target.value)}>
+            <select value={filtroTipo} onChange={(e) => actualizarFiltros({ tipo: e.target.value })}>
               <option value="">Todas</option>
-              <option value="creacion">Creación</option>
-              <option value="edicion">Edición</option>
-              <option value="eliminacion">Eliminación</option>
-              <option value="importacion">Importación</option>
-              <option value="notificacion">Notificación</option>
+              {Object.entries(CATEGORIA_LABELS).map(([valor, label]) => (
+                <option key={valor} value={valor}>{label}</option>
+              ))}
             </select>
           </div>
           <div className="fg" style={{ maxWidth: 130 }}>
             <label>Desde</label>
-            <input type="date" value={filtroDesde} onChange={(e) => setFiltroDesde(e.target.value)} />
+            <input type="date" value={filtroDesde} onChange={(e) => actualizarFiltros({ desde: e.target.value })} />
           </div>
           <div className="fg" style={{ maxWidth: 130 }}>
             <label>Hasta</label>
-            <input type="date" value={filtroHasta} onChange={(e) => setFiltroHasta(e.target.value)} />
+            <input type="date" value={filtroHasta} onChange={(e) => actualizarFiltros({ hasta: e.target.value })} />
           </div>
-          {(busqueda || filtroModulo || filtroAccion || filtroDesde || filtroHasta) && (
+          {hayFiltros && (
             <button className="btn" onClick={limpiar}>
               <IconSearch size={13} /> Limpiar
             </button>
           )}
         </div>
-        {filtrados.length !== logs.length && (
-          <div style={{ fontSize: 12, color: 'var(--t3)', marginTop: 8 }}>
-            Mostrando {filtrados.length} de {logs.length} registros
-          </div>
-        )}
+        <div style={{ fontSize: 12, color: 'var(--t3)', marginTop: 8 }}>
+          {total} registro{total !== 1 ? 's' : ''} en total
+        </div>
       </div>
 
       {/* Lista */}
@@ -140,11 +185,11 @@ export function AuditoriaView({ logs }: { logs: AuditLog[] }) {
           <span style={{ fontSize: 13, fontWeight: 600 }}>Trazabilidad de movimientos</span>
         </div>
         <div>
-          {filtrados.length === 0 ? (
+          {logs.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--t3)', fontSize: 13 }}>
               Sin registros de auditoría
             </div>
-          ) : filtrados.map((log) => {
+          ) : logs.map((log) => {
             const s = MODULO_STYLE[log.modulo] ?? MODULO_STYLE['AUTH']
             const actionIcon = ACCION_ICON[log.accion] ?? <IconPencil size={14} />
 
@@ -176,6 +221,21 @@ export function AuditoriaView({ logs }: { logs: AuditLog[] }) {
             )
           })}
         </div>
+
+        {/* Paginación */}
+        {totalPaginas > 1 && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '11px 15px', borderTop: '1px solid var(--bl)' }}>
+            <span style={{ fontSize: 12, color: 'var(--t3)' }}>Página {page} de {totalPaginas}</span>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <button className="btn" disabled={page <= 1} onClick={() => irAPagina(page - 1)}>
+                <IconChevronLeft size={14} /> Anterior
+              </button>
+              <button className="btn" disabled={page >= totalPaginas} onClick={() => irAPagina(page + 1)}>
+                Siguiente <IconChevronRight size={14} />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </>
   )
