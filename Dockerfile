@@ -21,11 +21,10 @@ RUN node_modules/.bin/esbuild prisma/seed.ts \
     --external:@prisma/client \
     --external:@prisma/adapter-mssql
 RUN pnpm run build
-# pnpm usa symlinks — resolverlos a archivos reales antes de copiar al runner
-# Solo necesitamos prisma (CLI) y @prisma/engines (binario de schema-engine)
-# @prisma/client y @prisma/adapter-mssql ya los incluye el standalone
-RUN cp -rL node_modules/prisma          /tmp/prisma-pkg && \
-    cp -rL node_modules/@prisma/engines /tmp/prisma-engines
+# pnpm usa symlinks y no hoistea @prisma/engines (transitiva) — resolverla con node
+RUN cp -rL node_modules/prisma /tmp/prisma-pkg && \
+    ENGINES=$(node -e "const r=require.resolve('@prisma/engines/package.json');process.stdout.write(r.replace('/package.json',''))") && \
+    cp -rL "$ENGINES" /tmp/prisma-engines
 
 # ─── Etapa 3: imagen final mínima ────────────────────────────────────────────
 FROM node:22-alpine AS runner
