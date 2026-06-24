@@ -22,8 +22,10 @@ RUN node_modules/.bin/esbuild prisma/seed.ts \
     --external:@prisma/adapter-mssql
 RUN pnpm run build
 # pnpm usa symlinks — resolverlos a archivos reales antes de copiar al runner
-RUN cp -rL node_modules/prisma  /tmp/prisma-pkg && \
-    cp -rL node_modules/@prisma /tmp/at-prisma-pkg
+# Solo necesitamos prisma (CLI) y @prisma/engines (binario de schema-engine)
+# @prisma/client y @prisma/adapter-mssql ya los incluye el standalone
+RUN cp -rL node_modules/prisma          /tmp/prisma-pkg && \
+    cp -rL node_modules/@prisma/engines /tmp/prisma-engines
 
 # ─── Etapa 3: imagen final mínima ────────────────────────────────────────────
 FROM node:22-alpine AS runner
@@ -41,9 +43,9 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static     ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/public           ./public
 
-# Prisma CLI + cliente — copiados desde /tmp donde los symlinks ya están resueltos
-COPY --from=builder --chown=nextjs:nodejs /tmp/prisma-pkg    ./node_modules/prisma
-COPY --from=builder --chown=nextjs:nodejs /tmp/at-prisma-pkg ./node_modules/@prisma
+# Prisma CLI + engines — copiados desde /tmp donde los symlinks ya están resueltos
+COPY --from=builder --chown=nextjs:nodejs /tmp/prisma-pkg     ./node_modules/prisma
+COPY --from=builder --chown=nextjs:nodejs /tmp/prisma-engines ./node_modules/@prisma/engines
 COPY --from=builder --chown=nextjs:nodejs /app/prisma/schema.prisma ./prisma/schema.prisma
 COPY --from=builder --chown=nextjs:nodejs /app/prisma/seed.cjs      ./prisma/seed.cjs
 
