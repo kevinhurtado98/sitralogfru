@@ -129,6 +129,9 @@ importers:
         specifier: ^4.4.3
         version: 4.4.3
     devDependencies:
+      '@prisma/engines':
+        specifier: 7.8.0
+        version: 7.8.0
       '@tailwindcss/postcss':
         specifier: ^4
         version: 4.3.0
