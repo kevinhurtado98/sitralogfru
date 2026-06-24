@@ -3,12 +3,13 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { format } from 'date-fns'
+import { format, getISOWeek } from 'date-fns'
 import * as Dialog from '@radix-ui/react-dialog'
 import { motion, AnimatePresence } from 'motion/react'
-import { IconArrowLeft, IconDeviceFloppy, IconCircleCheck, IconFileMinus, IconFilePlus, IconCheck, IconX } from '@tabler/icons-react'
+import { IconArrowLeft, IconDeviceFloppy, IconCircleCheck, IconFileMinus, IconFilePlus, IconCheck, IconX, IconRefresh } from '@tabler/icons-react'
 import type { TipoFactura, FormaPago } from '@/lib/types'
 import { actualizarFactura, marcarComoPagada, crearNotaCredito, crearNotaDebito } from '@/lib/actions/comprobantes'
+import { calcularSemanaPago } from '@/lib/semana-pago'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -253,6 +254,8 @@ export function FacturaDetalle({ factura: f }: { factura: FacturaFull }) {
   const [registradoContable,    setRegistradoContable]    = useState(f.registradoContable)
   const [fechaRegistroContable, setFechaRegistroContable] = useState(fmtInput(f.fechaRegistroContable))
   const [fechaPago,             setFechaPago]             = useState(fmtInput(f.fechaPago) || format(new Date(), 'yyyy-MM-dd'))
+  const [fechaVencimiento,      setFechaVencimiento]      = useState(fmtInput(f.fechaVencimiento))
+  const [viernesPago,           setViernesPago]           = useState(fmtInput(f.viernesPago))
   const [estado,                setEstado]                = useState(f.estado)
   const [retencion,             setRetencion]             = useState(f.retencion)
   const [detraccion,            setDetraccion]            = useState(f.detraccion)
@@ -272,15 +275,24 @@ export function FacturaDetalle({ factura: f }: { factura: FacturaFull }) {
         registradoContable,
         fechaRegistroContable: registradoContable ? (fechaRegistroContable || null) : null,
         fechaPago: estado === 'PAGADA' ? (fechaPago || null) : null,
+        fechaVencimiento,
+        viernesPago: viernesPago || null,
         retencion,
         detraccion,
       })
       if (res.ok) {
         setFeedback({ ok: true, msg: 'Cambios guardados correctamente.' })
+        router.refresh()
       } else {
         setFeedback({ ok: false, msg: res.error })
       }
     })
+  }
+
+  function recalcularSemana() {
+    if (!fechaVencimiento) return
+    const { viernesPago: vp } = calcularSemanaPago(new Date(fechaVencimiento))
+    setViernesPago(format(vp, 'yyyy-MM-dd'))
   }
 
   function handleMarcarPagada() {
@@ -343,11 +355,17 @@ export function FacturaDetalle({ factura: f }: { factura: FacturaFull }) {
           <Field label="N° Factura"     value={`${f.serie}-${f.numero}`} mono />
           <Field label="Moneda"         value={MONEDA_LABEL[f.moneda]} />
           <Field label="Fecha emisión"  value={fmt(f.fechaEmision)} />
-          <Field
-            label="Fecha vencimiento"
-            value={fmt(f.fechaVencimiento)}
-            color={estado !== 'PAGADA' ? 'var(--amber)' : undefined}
-          />
+
+          <div className="fi" style={{ gap: 3 }}>
+            <label>Fecha vencimiento</label>
+            <input
+              type="date"
+              value={fechaVencimiento}
+              onChange={(e) => setFechaVencimiento(e.target.value)}
+              style={{ color: estado !== 'PAGADA' ? 'var(--amber)' : undefined }}
+            />
+          </div>
+
           <Field label="Monto total" value={`${MONEDA_PRE[f.moneda]} ${f.monto.toFixed(2)}`} />
 
           <div className="fi" style={{ gap: 3 }}>
@@ -429,16 +447,28 @@ export function FacturaDetalle({ factura: f }: { factura: FacturaFull }) {
           </div>
 
           <div className="fi">
-            <label>Semana de pago</label>
-            <div style={{ paddingTop: 6 }}>
-              {f.semanaPago && f.viernesPago ? (
-                <span className="stag">
-                  Sem.{f.semanaPago} · Vie {format(new Date(f.viernesPago), 'dd/MM/yyyy')}
-                </span>
-              ) : (
-                <span style={{ fontSize: 13, color: 'var(--t3)' }}>—</span>
-              )}
+            <label>Viernes de pago</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <input
+                type="date"
+                value={viernesPago}
+                onChange={(e) => setViernesPago(e.target.value)}
+              />
+              <button
+                type="button"
+                className="ib"
+                title="Recalcular según fecha de vencimiento"
+                onClick={recalcularSemana}
+                style={{ flexShrink: 0 }}
+              >
+                <IconRefresh size={13} />
+              </button>
             </div>
+            {viernesPago && (
+              <span style={{ fontSize: 11, color: 'var(--t3)', marginTop: 3 }}>
+                Semana {getISOWeek(new Date(viernesPago))}
+              </span>
+            )}
           </div>
 
           {/* Registro contable */}

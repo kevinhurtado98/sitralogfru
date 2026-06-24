@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { z } from "zod";
-import { differenceInDays } from "date-fns";
+import { differenceInDays, getISOWeek } from "date-fns";
 import { calcularSemanaPago } from "@/lib/semana-pago";
 
 type Err = { ok: false; error: string };
@@ -134,6 +134,8 @@ export async function actualizarFactura(
     registradoContable: boolean;
     fechaRegistroContable: string | null;
     fechaPago: string | null;
+    fechaVencimiento: string;
+    viernesPago: string | null;
     retencion: number;
     detraccion: number;
   },
@@ -150,6 +152,7 @@ export async function actualizarFactura(
         ordenCompra: true,
         registradoContable: true,
         monto: true,
+        fechaVencimiento: true,
       },
     });
 
@@ -158,6 +161,9 @@ export async function actualizarFactura(
         2,
       ),
     );
+
+    const viernesPago = data.viernesPago ? new Date(data.viernesPago) : null;
+    const semanaPago = viernesPago ? getISOWeek(viernesPago) : null;
 
     await prisma.factura.update({
       where: { id },
@@ -173,6 +179,9 @@ export async function actualizarFactura(
             : new Date()
           : null,
         fechaPago: data.fechaPago ? new Date(data.fechaPago) : null,
+        fechaVencimiento: new Date(data.fechaVencimiento),
+        viernesPago,
+        semanaPago,
         retencion: data.retencion,
         detraccion: data.detraccion,
         montoNeto,

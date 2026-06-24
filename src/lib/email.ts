@@ -70,6 +70,7 @@ export async function sendWelcomeEmail(params: {
 // Envía alerta con la lista de requerimientos pendientes de atención
 export async function sendRequerimientosPendientesEmail(params: {
   requerimientos: RequerimientoEmailItem[];
+  destinatario?: string;
 }): Promise<{ ok: true } | { ok: false; error: string }> {
   const apiKey = process.env.BREVO_API_KEY;
   const from = process.env.BREVO_FROM;
@@ -93,7 +94,7 @@ export async function sendRequerimientosPendientesEmail(params: {
       },
       body: JSON.stringify({
         sender: { name: "SITRALOGFRU", email: from },
-        to: [{ email: ALERTA_DESTINATARIO }],
+        to: [{ email: params.destinatario ?? ALERTA_DESTINATARIO }],
         subject: "Requerimientos Pendientes de Atención",
         htmlContent: html,
       }),
@@ -119,6 +120,7 @@ export async function sendRequerimientosPendientesEmail(params: {
 // Envía alerta con las facturas vencidas que aún no tienen pago registrado
 export async function sendFacturasVencidasEmail(params: {
   facturas: FacturaEmailItem[];
+  destinatario?: string;
 }): Promise<{ ok: true } | { ok: false; error: string }> {
   const apiKey = process.env.BREVO_API_KEY;
   const from = process.env.BREVO_FROM;
@@ -142,7 +144,7 @@ export async function sendFacturasVencidasEmail(params: {
       },
       body: JSON.stringify({
         sender: { name: "SITRALOGFRU", email: from },
-        to: [{ email: ALERTA_DESTINATARIO }],
+        to: [{ email: params.destinatario ?? ALERTA_DESTINATARIO }],
         subject: "Facturas Vencidas sin pago Generado",
         htmlContent: html,
       }),

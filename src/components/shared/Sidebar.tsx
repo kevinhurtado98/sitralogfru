@@ -13,12 +13,14 @@ import {
   IconLogout,
   IconTruck,
   IconKey,
+  IconChartBar,
 } from '@tabler/icons-react'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 
 const NAV = [
   { label: 'Principal', items: [
     { href: '/dashboard',      label: 'Dashboard',       icon: IconLayoutDashboard },
+    { href: '/reportes',       label: 'Reportes',        icon: IconChartBar },
   ]},
   { label: 'Módulos', items: [
     { href: '/comprobantes',   label: 'Comprobantes',    icon: IconFileText },

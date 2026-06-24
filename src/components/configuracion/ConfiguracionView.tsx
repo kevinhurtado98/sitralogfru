@@ -1,6 +1,6 @@
 "use client";
 
-import { IconDeviceFloppy, IconUsers, IconMapPin } from "@tabler/icons-react";
+import { IconDeviceFloppy, IconUsers, IconMapPin, IconMailbox } from "@tabler/icons-react";
 import Link from "next/link";
 import type { UsuarioRow } from "./GestionarUsuariosView";
 
@@ -288,6 +288,29 @@ export function ConfiguracionView({
           <button className="btn btn-p">
             <IconDeviceFloppy size={13} /> Guardar
           </button>
+        </div>
+      </div>
+
+      {/* Correos de prueba */}
+      <div className="dc">
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <div>
+            <span className="ss" style={{ margin: 0, padding: 0, border: "none" }}>
+              Correos de prueba
+            </span>
+            <p style={{ fontSize: 12, color: "var(--t3)", marginTop: 4 }}>
+              Envía un correo de prueba con las plantillas reales del sistema para verificar diseño, remitente y entrega.
+            </p>
+          </div>
+          <Link href="/configuracion/correos-prueba" className="btn btn-sm">
+            <IconMailbox size={12} /> Probar
+          </Link>
         </div>
       </div>
     </>
