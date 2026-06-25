@@ -7,6 +7,9 @@ const nextConfig: NextConfig = {
     '/**': [
       './node_modules/.pnpm/**/@prisma+client*/**',
       './node_modules/.pnpm/**/@prisma+engines*/**',
+      './node_modules/.pnpm/**/@prisma+debug*/**',
+      './node_modules/.pnpm/**/@prisma+fetch-engine*/**',
+      './node_modules/.pnpm/**/@prisma+get-platform*/**',
     ],
   },
   env: {
