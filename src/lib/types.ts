@@ -16,8 +16,7 @@ export type EstadoRequerimiento =
   | "ATENDIDO_TOTAL"
   | "ATENDIDO_PARCIAL"
   | "PENDIENTE"
-  | "NO_ATENDIDO"
-  | "GESTION_REALIZADA";
+  | "NO_ATENDIDO";
 export type Modulo =
   | "COMPROBANTES"
   | "REQUERIMIENTOS"

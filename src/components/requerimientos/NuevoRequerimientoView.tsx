@@ -73,6 +73,7 @@ function FormularioDatos({
   tipo, setTipo,
   fecha, setFecha,
   desc, setDesc,
+  glosa, setGlosa,
   fechaEstimada, setFechaEstimada,
   error, isPending,
   onGuardar,
@@ -91,6 +92,8 @@ function FormularioDatos({
   setFecha:            (v: string) => void
   desc:                string
   setDesc:             (v: string) => void
+  glosa:               string
+  setGlosa:            (v: string) => void
   fechaEstimada:       string
   setFechaEstimada:    (v: string) => void
   error:               string
@@ -218,6 +221,23 @@ function FormularioDatos({
         </div>
       </div>
 
+      <div className="fi" style={{ marginBottom: 14 }}>
+        <label>
+          Glosa{' '}
+          <span style={{ color: 'var(--t3)', fontWeight: 400, textTransform: 'none' }}>
+            (sustento: para qué se necesita esto · máx. 500 caracteres)
+          </span>
+        </label>
+        <textarea
+          value={glosa}
+          onChange={(e) => setGlosa(e.target.value.slice(0, 500))}
+          maxLength={500}
+          placeholder="Ej. Repuestos para trabajos de reparación en techos de producción palta."
+          rows={2}
+          style={{ resize: 'vertical' }}
+        />
+      </div>
+
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 9 }}>
         <a href="/requerimientos" className="btn" style={{ textDecoration: 'none' }}>Cancelar</a>
         <button className="btn btn-p" onClick={onGuardar} disabled={isPending}>
@@ -240,6 +260,7 @@ export function NuevoRequerimientoView({ areas, tarjetasRapidas }: { areas: Area
   const [prioridad,     setPrioridad]     = useState<Prioridad>('ALTA')
   const [tipo,          setTipo]          = useState<TipoRequerimiento>('COMPRA')
   const [desc,          setDesc]          = useState('')
+  const [glosa,         setGlosa]         = useState('')
   const [fecha,         setFecha]         = useState(format(new Date(), 'yyyy-MM-dd'))
   const [fechaEstimada, setFechaEstimada] = useState('')
   const [error,         setError]         = useState('')
@@ -266,13 +287,17 @@ export function NuevoRequerimientoView({ areas, tarjetasRapidas }: { areas: Area
   }
 
   function guardar() {
-    if (!areaId || !responsableId || !desc.trim()) {
-      setError('Completa área, responsable y descripción.')
+    if (!areaId || !responsableId || !desc.trim() || !glosa.trim()) {
+      setError('Completa área, responsable, descripción y glosa.')
       return
     }
     setError('')
     startTransition(async () => {
-      const res = await crearRequerimiento({ fechaSolicitud: fecha, areaId, responsableId, prioridad, tipo, descripcion: desc.trim(), fechaEstimadaAtencion: fechaEstimada || undefined })
+      const res = await crearRequerimiento({
+        fechaSolicitud: fecha, areaId, responsableId, prioridad, tipo,
+        descripcion: desc.trim(), glosa: glosa.trim(),
+        fechaEstimadaAtencion: fechaEstimada || undefined,
+      })
       if (!res.ok) { setError(res.error); return }
       router.push('/requerimientos')
       router.refresh()
@@ -298,6 +323,7 @@ export function NuevoRequerimientoView({ areas, tarjetasRapidas }: { areas: Area
         tipo={tipo}                   setTipo={setTipo}
         fecha={fecha}                 setFecha={setFecha}
         desc={desc}                   setDesc={setDesc}
+        glosa={glosa}                 setGlosa={setGlosa}
         fechaEstimada={fechaEstimada} setFechaEstimada={setFechaEstimada}
         error={error}
         isPending={isPending}

@@ -4,6 +4,9 @@ import { useState, useMemo } from 'react'
 import { format } from 'date-fns'
 import { IconSearch, IconEye, IconPlus, IconFileSpreadsheet } from '@tabler/icons-react'
 import type { EstadoRequerimiento, Prioridad, TipoRequerimiento } from '@/lib/types'
+import { SortableTh } from '@/components/ui/SortableTh'
+import { Pagination } from '@/components/ui/Pagination'
+import { useTableData, type SortAccessor } from '@/lib/hooks/useTableData'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -22,6 +25,7 @@ export interface ReqRow {
   prioridad:      string
   tipo:           string
   descripcion:    string
+  glosa:          string | null
   estado:         string
   diasRetraso:    number
   responsable:    { nombre: string }
@@ -37,7 +41,6 @@ function estadoBadge(e: string) {
     ATENDIDO_PARCIAL:  ['badge-ora',   'Atendido parcial'],
     PENDIENTE:         ['badge-red',   'Pendiente'],
     NO_ATENDIDO:       ['badge-red',   'No atendido'],
-    GESTION_REALIZADA: ['badge-slate', 'Gestión realizada'],
   }
   const [cls, label] = map[e] ?? ['badge-slate', e]
   return <span className={`badge ${cls}`}>{label}</span>
@@ -88,6 +91,26 @@ export function RequerimientosView({
     })
   }, [requerimientos, busqueda, filtroArea, filtroEstado, filtroDesde, filtroHasta])
 
+  const sortAccessors = useMemo<Record<string, SortAccessor<ReqRow>>>(() => ({
+    fecha:       (r) => new Date(r.fechaSolicitud),
+    area:        (r) => r.area,
+    responsable: (r) => r.responsable.nombre,
+    tipo:        (r) => r.tipo,
+    prioridad:   (r) => r.prioridad === 'ALTA' ? 1 : 0,
+    descripcion: (r) => r.descripcion,
+    glosa:       (r) => r.glosa ?? '',
+    creadoPor:   (r) => r.creadoPor.nombre,
+    diasRetraso: (r) => r.diasRetraso,
+    estado:      (r) => r.estado,
+    actualizacion: (r) => r.fechaUltimoCambio ? new Date(r.fechaUltimoCambio) : null,
+  }), [])
+
+  const {
+    sortKey, sortDir, toggleSort,
+    page, setPage, pageSize, setPageSize,
+    pageData, totalItems, totalPages,
+  } = useTableData(filtrados, sortAccessors, 20)
+
   function limpiar() {
     setBusqueda(''); setFiltroArea(''); setFiltroDesde(''); setFiltroHasta(''); setFiltroEstado('')
   }
@@ -134,7 +157,6 @@ export function RequerimientosView({
               <option value="ATENDIDO_PARCIAL">Atendido parcial</option>
               <option value="ATENDIDO_TOTAL">Atendido total</option>
               <option value="NO_ATENDIDO">No atendido</option>
-              <option value="GESTION_REALIZADA">Gestión realizada</option>
             </select>
           </div>
           <button className="btn" onClick={limpiar}><IconSearch size={13} /> Limpiar</button>
@@ -159,17 +181,26 @@ export function RequerimientosView({
           <table>
             <thead>
               <tr>
-                <th>Fecha</th><th>Área</th><th>Responsable</th><th>Tipo</th>
-                <th>Prioridad</th><th>Descripción</th><th>Generado por</th>
-                <th>Días atraso</th><th>Estado</th><th>Últ. actualización</th><th></th>
+                <SortableTh label="Fecha" sortKey="fecha" activeKey={sortKey} dir={sortDir} onSort={toggleSort} />
+                <SortableTh label="Área" sortKey="area" activeKey={sortKey} dir={sortDir} onSort={toggleSort} />
+                <SortableTh label="Responsable" sortKey="responsable" activeKey={sortKey} dir={sortDir} onSort={toggleSort} />
+                <SortableTh label="Tipo" sortKey="tipo" activeKey={sortKey} dir={sortDir} onSort={toggleSort} />
+                <SortableTh label="Prioridad" sortKey="prioridad" activeKey={sortKey} dir={sortDir} onSort={toggleSort} />
+                <SortableTh label="Descripción" sortKey="descripcion" activeKey={sortKey} dir={sortDir} onSort={toggleSort} />
+                <SortableTh label="Glosa" sortKey="glosa" activeKey={sortKey} dir={sortDir} onSort={toggleSort} />
+                <SortableTh label="Generado por" sortKey="creadoPor" activeKey={sortKey} dir={sortDir} onSort={toggleSort} />
+                <SortableTh label="Días atraso" sortKey="diasRetraso" activeKey={sortKey} dir={sortDir} onSort={toggleSort} />
+                <SortableTh label="Estado" sortKey="estado" activeKey={sortKey} dir={sortDir} onSort={toggleSort} />
+                <SortableTh label="Últ. actualización" sortKey="actualizacion" activeKey={sortKey} dir={sortDir} onSort={toggleSort} />
+                <th></th>
               </tr>
             </thead>
             <tbody>
-              {filtrados.length === 0 ? (
-                <tr><td colSpan={11} style={{ textAlign: 'center', padding: '32px 0', color: 'var(--t3)' }}>
+              {pageData.length === 0 ? (
+                <tr><td colSpan={12} style={{ textAlign: 'center', padding: '32px 0', color: 'var(--t3)' }}>
                   No hay requerimientos
                 </td></tr>
-              ) : filtrados.map((r) => (
+              ) : pageData.map((r) => (
                 <tr key={r.id}>
                   <td style={{ whiteSpace: 'nowrap' }}>{format(new Date(r.fechaSolicitud), 'dd/MM/yyyy')}</td>
                   <td style={{ fontWeight: 500 }}>{r.area}</td>
@@ -178,6 +209,9 @@ export function RequerimientosView({
                   <td>{prioridadBadge(r.prioridad)}</td>
                   <td style={{ maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--t2)' }}>
                     {r.descripcion}
+                  </td>
+                  <td style={{ maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--t2)' }}>
+                    {r.glosa ?? '—'}
                   </td>
                   <td style={{ fontSize: 12, color: 'var(--t2)' }}>{r.creadoPor.nombre}</td>
                   <td>
@@ -197,6 +231,15 @@ export function RequerimientosView({
             </tbody>
           </table>
         </div>
+
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
       </div>
     </>
   )

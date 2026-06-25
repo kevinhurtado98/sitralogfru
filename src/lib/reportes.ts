@@ -13,7 +13,7 @@ const FORMA_LABEL: Record<string, string> = {
 };
 const ESTADO_REQ_LABEL: Record<string, string> = {
   ATENDIDO_TOTAL: "Atendido total", ATENDIDO_PARCIAL: "Atendido parcial",
-  PENDIENTE: "Pendiente", NO_ATENDIDO: "No atendido", GESTION_REALIZADA: "Gestión realizada",
+  PENDIENTE: "Pendiente", NO_ATENDIDO: "No atendido",
 };
 
 // ─── Helpers de agregación ───────────────────────────────────────────────────

@@ -39,7 +39,9 @@
   --fm: var(--font-dm-mono), 'DM Mono', monospace;
 }
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+}
 
 /* App 100% web — sin responsive, mínimo 1280px */
 html {
@@ -200,6 +202,33 @@ body {
 }
 .tc tr:last-child td { border-bottom: none; }
 .tc tr:hover td { background: var(--bg2); }
+.tc th.sortable { cursor: pointer; user-select: none; }
+.tc th.sortable:hover { color: var(--t1); }
+.tc th.sortable .sort-ic { opacity: 0.35; }
+.tc th.sortable.active .sort-ic { opacity: 1; color: var(--blue); }
+
+/* ── PAGINATION BAR ───────────────────────────────────────────────────── */
+.tc-pag {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 15px;
+  border-top: 1px solid var(--bl);
+  font-size: 12px;
+  color: var(--t2);
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.tc-pag select {
+  height: 26px;
+  font-size: 12px;
+  padding: 0 6px;
+  border: 1px solid var(--bm);
+  border-radius: var(--r);
+  background: var(--bg);
+  color: var(--t1);
+  font-family: var(--f);
+}
 
 /* ── METRIC CARD ─────────────────────────────────────────────────────── */
 .mc {
@@ -453,3 +482,13 @@ body {
   pointer-events: none;
 }
 .toast.show { transform: translateY(0); opacity: 1; }
+
+/* ── FLOATING PANELS (Select, Popover, DatePicker — Radix) ─────────────── */
+@keyframes float-in {
+  from { opacity: 0; transform: scale(0.96) translateY(-2px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes float-out {
+  from { opacity: 1; transform: scale(1) translateY(0); }
+  to   { opacity: 0; transform: scale(0.96) translateY(-2px); }
+}

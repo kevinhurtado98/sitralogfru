@@ -254,7 +254,7 @@ export function FacturaDetalle({ factura: f }: { factura: FacturaFull }) {
   const [registradoContable,    setRegistradoContable]    = useState(f.registradoContable)
   const [fechaRegistroContable, setFechaRegistroContable] = useState(fmtInput(f.fechaRegistroContable))
   const [fechaPago,             setFechaPago]             = useState(fmtInput(f.fechaPago) || format(new Date(), 'yyyy-MM-dd'))
-  const [fechaVencimiento,      setFechaVencimiento]      = useState(fmtInput(f.fechaVencimiento))
+  const fechaVencimiento = fmtInput(f.fechaVencimiento)
   const [viernesPago,           setViernesPago]           = useState(fmtInput(f.viernesPago))
   const [estado,                setEstado]                = useState(f.estado)
   const [retencion,             setRetencion]             = useState(f.retencion)
@@ -356,15 +356,11 @@ export function FacturaDetalle({ factura: f }: { factura: FacturaFull }) {
           <Field label="Moneda"         value={MONEDA_LABEL[f.moneda]} />
           <Field label="Fecha emisión"  value={fmt(f.fechaEmision)} />
 
-          <div className="fi" style={{ gap: 3 }}>
-            <label>Fecha vencimiento</label>
-            <input
-              type="date"
-              value={fechaVencimiento}
-              onChange={(e) => setFechaVencimiento(e.target.value)}
-              style={{ color: estado !== 'PAGADA' ? 'var(--amber)' : undefined }}
-            />
-          </div>
+          <Field
+            label="Fecha vencimiento"
+            value={fmt(f.fechaVencimiento)}
+            color={estado !== 'PAGADA' ? 'var(--amber)' : undefined}
+          />
 
           <Field label="Monto total" value={`${MONEDA_PRE[f.moneda]} ${f.monto.toFixed(2)}`} />
 

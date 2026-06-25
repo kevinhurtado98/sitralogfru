@@ -17,6 +17,7 @@ const crearSchema = z.object({
   prioridad:             z.enum(['ALTA', 'MEDIA']),
   tipo:                  z.enum(['COMPRA', 'SERVICIO']),
   descripcion:           z.string().min(1).max(1000),
+  glosa:                 z.string().min(1).max(500),
   fechaEstimadaAtencion: z.string().optional(),
 })
 
@@ -28,6 +29,7 @@ export async function crearRequerimiento(data: {
   prioridad:             'ALTA' | 'MEDIA'
   tipo:                  'COMPRA' | 'SERVICIO'
   descripcion:           string
+  glosa:                 string
   fechaEstimadaAtencion?: string
 }): Promise<{ ok: true; id: number } | Err> {
   const parsed = crearSchema.safeParse(data)
@@ -48,6 +50,7 @@ export async function crearRequerimiento(data: {
         prioridad:             parsed.data.prioridad,
         tipo:                  parsed.data.tipo,
         descripcion:           parsed.data.descripcion,
+        glosa:                 parsed.data.glosa,
         fechaEstimadaAtencion: parsed.data.fechaEstimadaAtencion
           ? new Date(parsed.data.fechaEstimadaAtencion)
           : null,

@@ -190,6 +190,7 @@ model Requerimiento {
   prioridad             String    @default("ALTA") @db.NVarChar(10)
   tipo                  String    @db.NVarChar(15)
   descripcion           String    @db.NVarChar(1000)
+  glosa                 String?   @db.NVarChar(500)
   estado                String    @default("PENDIENTE") @db.NVarChar(25)
   diasRetraso           Int       @default(0)
   fechaEstimadaAtencion DateTime?

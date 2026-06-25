@@ -9,6 +9,9 @@ import {
 } from '@tabler/icons-react'
 import { eliminarFactura, toggleRegistroContable } from '@/lib/actions/comprobantes'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { SortableTh } from '@/components/ui/SortableTh'
+import { Pagination } from '@/components/ui/Pagination'
+import { useTableData, type SortAccessor } from '@/lib/hooks/useTableData'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -128,6 +131,24 @@ export function ComprobantesView({ facturas: initial }: { facturas: FacturaRow[]
 
     return r
   }, [facturas, busqueda, filtroEstado, filtroDesde, filtroHasta, filtroSemana, filtroContable])
+
+  const sortAccessors = useMemo<Record<string, SortAccessor<FacturaRow>>>(() => ({
+    numero:          (f) => `${f.serie}-${f.numero}`,
+    proveedor:       (f) => f.proveedor,
+    fechaVencimiento:(f) => new Date(f.fechaVencimiento),
+    moneda:          (f) => f.moneda,
+    monto:           (f) => f.montoNeto,
+    semanaPago:      (f) => f.semanaPago ?? -1,
+    formaPago:       (f) => f.formaPago ? FORMA_LABEL[f.formaPago] : '',
+    estado:          (f) => f.estado,
+    contable:        (f) => f.registradoContable ? 1 : 0,
+  }), [])
+
+  const {
+    sortKey, sortDir, toggleSort,
+    page, setPage, pageSize, setPageSize,
+    pageData, totalItems, totalPages,
+  } = useTableData(filtradas, sortAccessors, 20)
 
   function limpiarFiltros() {
     setBusqueda(''); setFiltroEstado(''); setFiltroDesde('')
@@ -327,30 +348,30 @@ export function ComprobantesView({ facturas: initial }: { facturas: FacturaRow[]
                 <th style={{ width: 36 }}>
                   <input
                     type="checkbox"
-                    checked={selected.length === filtradas.length && filtradas.length > 0}
-                    onChange={(e) => setSelected(e.target.checked ? filtradas.map((f) => f.id) : [])}
+                    checked={selected.length === pageData.length && pageData.length > 0}
+                    onChange={(e) => setSelected(e.target.checked ? pageData.map((f) => f.id) : [])}
                   />
                 </th>
-                <th>N° Factura</th>
-                <th>Proveedor</th>
-                <th>F. Vencimiento</th>
-                <th>Moneda</th>
-                <th>Monto a pagar</th>
-                <th>Semana pago</th>
-                <th>Forma pago</th>
-                <th>Estado</th>
-                <th style={{ minWidth: 210 }}>✓ Registro contable</th>
+                <SortableTh label="N° Factura" sortKey="numero" activeKey={sortKey} dir={sortDir} onSort={toggleSort} />
+                <SortableTh label="Proveedor" sortKey="proveedor" activeKey={sortKey} dir={sortDir} onSort={toggleSort} />
+                <SortableTh label="F. Vencimiento" sortKey="fechaVencimiento" activeKey={sortKey} dir={sortDir} onSort={toggleSort} />
+                <SortableTh label="Moneda" sortKey="moneda" activeKey={sortKey} dir={sortDir} onSort={toggleSort} />
+                <SortableTh label="Monto a pagar" sortKey="monto" activeKey={sortKey} dir={sortDir} onSort={toggleSort} />
+                <SortableTh label="Semana pago" sortKey="semanaPago" activeKey={sortKey} dir={sortDir} onSort={toggleSort} />
+                <SortableTh label="Forma pago" sortKey="formaPago" activeKey={sortKey} dir={sortDir} onSort={toggleSort} />
+                <SortableTh label="Estado" sortKey="estado" activeKey={sortKey} dir={sortDir} onSort={toggleSort} />
+                <SortableTh label="✓ Registro contable" sortKey="contable" activeKey={sortKey} dir={sortDir} onSort={toggleSort} style={{ minWidth: 210 }} />
                 <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
-              {filtradas.length === 0 ? (
+              {pageData.length === 0 ? (
                 <tr>
                   <td colSpan={11} style={{ textAlign: 'center', padding: '40px 0', color: 'var(--t3)' }}>
                     No hay facturas registradas
                   </td>
                 </tr>
-              ) : filtradas.map((f) => (
+              ) : pageData.map((f) => (
                 <tr
                   key={f.id}
                   style={{ background: selected.includes(f.id) ? 'var(--blue-bg)' : undefined }}
@@ -417,6 +438,15 @@ export function ComprobantesView({ facturas: initial }: { facturas: FacturaRow[]
             </tbody>
           </table>
         </div>
+
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
       </div>
 
       {/* Confirm eliminar */}

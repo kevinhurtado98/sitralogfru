@@ -7,11 +7,12 @@ import { format } from "date-fns";
 
 const ESTADO_LABEL: Record<string, string> = {
   ATENDIDO_TOTAL: "Atendido total", ATENDIDO_PARCIAL: "Atendido parcial",
-  PENDIENTE: "Pendiente", NO_ATENDIDO: "No atendido", GESTION_REALIZADA: "Gestión realizada",
+  PENDIENTE: "Pendiente", NO_ATENDIDO: "No atendido",
 };
 
 interface FilaExport {
   fechaSolicitud: Date; tipo: string; prioridad: string; descripcion: string;
+  glosa: string | null;
   diasRetraso: number; estado: string;
   area: { nombre: string };
   responsable: { nombres: string; apellidos: string };
@@ -25,6 +26,7 @@ const COLUMNAS: ColumnaExcel<FilaExport>[] = [
   { header: "Tipo", width: 12, value: (r) => r.tipo === "COMPRA" ? "Compra" : "Servicio" },
   { header: "Prioridad", width: 10, value: (r) => r.prioridad === "ALTA" ? "Alta" : "Media" },
   { header: "Descripción", width: 50, value: (r) => r.descripcion },
+  { header: "Glosa", width: 50, value: (r) => r.glosa ?? "" },
   { header: "Generado por", width: 24, value: (r) => `${r.creadoPor.nombres} ${r.creadoPor.apellidos}`.trim() },
   { header: "Días atraso", width: 12, value: (r) => r.diasRetraso },
   { header: "Estado", width: 18, value: (r) => ESTADO_LABEL[r.estado] ?? r.estado },
@@ -69,6 +71,7 @@ export async function GET(request: NextRequest) {
     orderBy: { createdAt: "desc" },
     select: {
       fechaSolicitud: true, tipo: true, prioridad: true, descripcion: true,
+      glosa: true,
       diasRetraso: true, estado: true,
       area: { select: { nombre: true } },
       responsable: { select: { nombres: true, apellidos: true } },

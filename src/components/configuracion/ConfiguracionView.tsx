@@ -1,8 +1,24 @@
 "use client";
 
+import { useState } from "react";
 import { IconDeviceFloppy, IconUsers, IconMapPin, IconMailbox } from "@tabler/icons-react";
 import Link from "next/link";
 import type { UsuarioRow } from "./GestionarUsuariosView";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+const FRUTAS = [
+  { value: "manzana", label: "Manzana" },
+  { value: "pera", label: "Pera" },
+  { value: "platano", label: "Plátano" },
+  { value: "uva", label: "Uva" },
+  { value: "fresa", label: "Fresa" },
+];
 
 interface ResponsableRow {
   id: number;
@@ -30,6 +46,8 @@ export function ConfiguracionView({
   usuarios: UsuarioRow[];
   responsables: ResponsableRow[];
 }) {
+  const [fruta, setFruta] = useState<string>("");
+
   return (
     <>
       {/* Áreas y responsables */}
@@ -311,6 +329,26 @@ export function ConfiguracionView({
           <Link href="/configuracion/correos-prueba" className="btn btn-sm">
             <IconMailbox size={12} /> Probar
           </Link>
+        </div>
+      </div>
+
+      {/* Demo: componente Select reutilizable */}
+      <div className="dc">
+        <div className="ss">Demo: Select reutilizable</div>
+        <div className="fi" style={{ maxWidth: 280 }}>
+          <label>Fruta favorita</label>
+          <Select value={fruta} onValueChange={setFruta}>
+            <SelectTrigger>
+              <SelectValue placeholder="Selecciona una fruta" />
+            </SelectTrigger>
+            <SelectContent>
+              {FRUTAS.map((f) => (
+                <SelectItem key={f.value} value={f.value}>
+                  {f.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
     </>
