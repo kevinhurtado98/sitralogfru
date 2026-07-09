@@ -18,6 +18,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Configurar Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Login a GHCR
         uses: docker/login-action@v3
         with:
@@ -26,20 +29,26 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Construir y publicar imagen de la app
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
-          file: Dockerfile
+          target: runner
           push: true
           tags: ${{ env.IMAGE }}:latest
+          cache-from: type=gha,scope=app
+          cache-to: type=gha,scope=app,mode=max
 
-      - name: Construir y publicar imagen de migraciones
-        uses: docker/build-push-action@v5
+      - name: Construir y publicar imagen de schema/seed
+        uses: docker/build-push-action@v6
         with:
           context: .
-          file: Dockerfile.migrate
+          target: migrate
           push: true
           tags: ${{ env.IMAGE }}:migrate
+          cache-from: |
+            type=gha,scope=app
+            type=gha,scope=migrate
+          cache-to: type=gha,scope=migrate,mode=max
 
       - name: Desplegar en VPS
         uses: appleboy/ssh-action@v1
@@ -48,33 +57,51 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            # 1. Detener contenedor anterior
-            docker stop sitralogfru || true
-            docker rm   sitralogfru || true
+            set -e
 
-            # 2. Resetear BD (etapa de desarrollo)
-            docker exec sqlserver /opt/mssql-tools18/bin/sqlcmd \
-              -S localhost -U SA -P '${{ secrets.DB_PASSWORD }}' -C \
-              -Q "IF EXISTS (SELECT 1 FROM sys.databases WHERE name = 'sitralogfru') \
-                    BEGIN \
-                      ALTER DATABASE sitralogfru SET SINGLE_USER WITH ROLLBACK IMMEDIATE; \
-                      DROP DATABASE sitralogfru; \
-                    END; \
-                  CREATE DATABASE sitralogfru"
+            ENV_FILE=/opt/docker-envs/sitralogfru/.env
+            DB_NAME=$(grep -E '^DB_NAME=' $ENV_FILE | cut -d= -f2 | tr -d '"\r')
+            DB_NAME=${DB_NAME:-sitralogfru}
 
-            # 3. Aplicar schema y seed con imagen dedicada
+            # 1. Descargar imágenes nuevas antes de tocar nada (menos downtime)
+            docker pull ${{ env.IMAGE }}:latest
             docker pull ${{ env.IMAGE }}:migrate
+
+            # 2. Si la BD no existe: crearla y marcar que corra el seed.
+            #    Si ya existe: se conserva tal cual, sin seed.
+            DB_EXISTS=$(docker exec sqlserver /opt/mssql-tools18/bin/sqlcmd \
+              -S localhost -U SA -P '${{ secrets.DB_PASSWORD }}' -C -h -1 -W \
+              -Q "SET NOCOUNT ON; SELECT COUNT(*) FROM sys.databases WHERE name = '$DB_NAME'" | tr -d '[:space:]')
+
+            if [ "$DB_EXISTS" = "0" ]; then
+              echo ">> BD '$DB_NAME' no existe: se crea y se ejecutará el seed"
+              docker exec sqlserver /opt/mssql-tools18/bin/sqlcmd \
+                -S localhost -U SA -P '${{ secrets.DB_PASSWORD }}' -C \
+                -Q "CREATE DATABASE [$DB_NAME]"
+              RUN_SEED=1
+            else
+              echo ">> BD '$DB_NAME' existente: se conservan los datos (sin seed)"
+              RUN_SEED=0
+            fi
+
+            # 3. Sincronizar schema (idempotente; falla si un cambio implica
+            #    pérdida de datos, en cuyo caso se resuelve manualmente)
             docker run --rm \
               --add-host=host.docker.internal:host-gateway \
-              --env-file /opt/docker-envs/sitralogfru/.env \
+              --env-file $ENV_FILE \
+              -e RUN_SEED=$RUN_SEED \
               ${{ env.IMAGE }}:migrate
 
-            # 4. Arrancar la app
-            docker pull ${{ env.IMAGE }}:latest
+            # 4. Reemplazar el contenedor de la app
+            docker stop sitralogfru || true
+            docker rm   sitralogfru || true
             docker run -d \
               --name sitralogfru \
               --restart unless-stopped \
               --add-host=host.docker.internal:host-gateway \
-              --env-file /opt/docker-envs/sitralogfru/.env \
+              --env-file $ENV_FILE \
               -p 3000:3000 \
               ${{ env.IMAGE }}:latest
+
+            # 5. Limpiar imágenes huérfanas de deploys anteriores
+            docker image prune -f

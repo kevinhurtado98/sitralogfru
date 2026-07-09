@@ -16,17 +16,6 @@
   "prisma": {
     "seed": "tsx prisma/seed.ts"
   },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@prisma/engines",
-      "esbuild",
-      "prisma"
-    ],
-    "ignoredBuiltDependencies": [
-      "sharp",
-      "unrs-resolver"
-    ]
-  },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.2",
     "@hookform/resolvers": "^5.4.0",
