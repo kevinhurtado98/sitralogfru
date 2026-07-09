@@ -21,6 +21,7 @@ export interface FacturaRow {
   serie: string; numero: string
   fechaVencimiento: Date | string
   moneda: string
+  tipo: string
   montoNeto: number
   estado: string
   formaPago: string | null
@@ -37,6 +38,7 @@ const FORMA_LABEL: Record<string, string> = {
   CREDITO: 'Crédito', FACTORING: 'Factoring',
   FACTURA_NEGOCIABLE: 'Factura negociable', LETRA: 'Letra',
 }
+const TIPO_LABEL: Record<string, string> = { COMPRA: 'Compra', SERVICIO: 'Servicio' }
 
 function estadoBadgeClass(e: string) {
   return ({ POR_VENCER: 'badge-red', PENDIENTE: 'badge-amber', PAGADA: 'badge-green', VENCIDA: 'badge-red' } as Record<string, string>)[e]
@@ -93,6 +95,7 @@ export function ComprobantesView({ facturas: initial }: { facturas: FacturaRow[]
 
   // Filtros
   const [busqueda,       setBusqueda]       = useState('')
+  const [filtroTipo,     setFiltroTipo]     = useState('')
   const [filtroEstado,   setFiltroEstado]   = useState('')
   const [filtroDesde,    setFiltroDesde]    = useState('')
   const [filtroHasta,    setFiltroHasta]    = useState('')
@@ -116,6 +119,7 @@ export function ComprobantesView({ facturas: initial }: { facturas: FacturaRow[]
         `${f.serie}-${f.numero}`.toLowerCase().includes(q)
       )
     }
+    if (filtroTipo)   r = r.filter((f) => f.tipo === filtroTipo)
     if (filtroEstado) r = r.filter((f) => f.estado === filtroEstado)
     if (filtroDesde)  r = r.filter((f) => new Date(f.fechaVencimiento) >= new Date(filtroDesde))
     if (filtroHasta) {
@@ -130,11 +134,12 @@ export function ComprobantesView({ facturas: initial }: { facturas: FacturaRow[]
     if (filtroContable === 'registrado')  r = r.filter((f) => f.registradoContable)
 
     return r
-  }, [facturas, busqueda, filtroEstado, filtroDesde, filtroHasta, filtroSemana, filtroContable])
+  }, [facturas, busqueda, filtroTipo, filtroEstado, filtroDesde, filtroHasta, filtroSemana, filtroContable])
 
   const sortAccessors = useMemo<Record<string, SortAccessor<FacturaRow>>>(() => ({
     numero:          (f) => `${f.serie}-${f.numero}`,
     proveedor:       (f) => f.proveedor,
+    tipo:            (f) => TIPO_LABEL[f.tipo] ?? f.tipo,
     fechaVencimiento:(f) => new Date(f.fechaVencimiento),
     moneda:          (f) => f.moneda,
     monto:           (f) => f.montoNeto,
@@ -151,13 +156,14 @@ export function ComprobantesView({ facturas: initial }: { facturas: FacturaRow[]
   } = useTableData(filtradas, sortAccessors, 20)
 
   function limpiarFiltros() {
-    setBusqueda(''); setFiltroEstado(''); setFiltroDesde('')
+    setBusqueda(''); setFiltroTipo(''); setFiltroEstado(''); setFiltroDesde('')
     setFiltroHasta(''); setFiltroSemana(''); setFiltroContable('')
   }
 
   function exportarExcel() {
     const params = new URLSearchParams()
     if (busqueda)       params.set('q', busqueda)
+    if (filtroTipo)     params.set('tipo', filtroTipo)
     if (filtroEstado)   params.set('estado', filtroEstado)
     if (filtroDesde)    params.set('desde', filtroDesde)
     if (filtroHasta)    params.set('hasta', filtroHasta)
@@ -211,7 +217,7 @@ export function ComprobantesView({ facturas: initial }: { facturas: FacturaRow[]
     })
   }
 
-  const hayFiltros = busqueda || filtroEstado || filtroDesde || filtroHasta || filtroSemana || filtroContable
+  const hayFiltros = busqueda || filtroTipo || filtroEstado || filtroDesde || filtroHasta || filtroSemana || filtroContable
 
   return (
     <>
@@ -244,6 +250,14 @@ export function ComprobantesView({ facturas: initial }: { facturas: FacturaRow[]
           <div className="fg" style={{ maxWidth: 110 }}>
             <label>Semana pago</label>
             <input type="number" placeholder="20" min={1} max={53} value={filtroSemana} onChange={(e) => setFiltroSemana(e.target.value)} />
+          </div>
+          <div className="fg" style={{ maxWidth: 130 }}>
+            <label>Tipo</label>
+            <select value={filtroTipo} onChange={(e) => setFiltroTipo(e.target.value)}>
+              <option value="">Todos</option>
+              <option value="COMPRA">Compra</option>
+              <option value="SERVICIO">Servicio</option>
+            </select>
           </div>
           <div className="fg" style={{ maxWidth: 140 }}>
             <label>Estado</label>
@@ -354,6 +368,7 @@ export function ComprobantesView({ facturas: initial }: { facturas: FacturaRow[]
                 </th>
                 <SortableTh label="N° Factura" sortKey="numero" activeKey={sortKey} dir={sortDir} onSort={toggleSort} />
                 <SortableTh label="Proveedor" sortKey="proveedor" activeKey={sortKey} dir={sortDir} onSort={toggleSort} />
+                <SortableTh label="Tipo" sortKey="tipo" activeKey={sortKey} dir={sortDir} onSort={toggleSort} />
                 <SortableTh label="F. Vencimiento" sortKey="fechaVencimiento" activeKey={sortKey} dir={sortDir} onSort={toggleSort} />
                 <SortableTh label="Moneda" sortKey="moneda" activeKey={sortKey} dir={sortDir} onSort={toggleSort} />
                 <SortableTh label="Monto a pagar" sortKey="monto" activeKey={sortKey} dir={sortDir} onSort={toggleSort} />
@@ -367,7 +382,7 @@ export function ComprobantesView({ facturas: initial }: { facturas: FacturaRow[]
             <tbody>
               {pageData.length === 0 ? (
                 <tr>
-                  <td colSpan={11} style={{ textAlign: 'center', padding: '40px 0', color: 'var(--t3)' }}>
+                  <td colSpan={12} style={{ textAlign: 'center', padding: '40px 0', color: 'var(--t3)' }}>
                     No hay facturas registradas
                   </td>
                 </tr>
@@ -390,6 +405,11 @@ export function ComprobantesView({ facturas: initial }: { facturas: FacturaRow[]
                   </td>
                   <td style={{ maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {f.proveedor}
+                  </td>
+                  <td>
+                    <span className={`badge ${f.tipo === 'COMPRA' ? 'badge-blue' : 'badge-slate'}`}>
+                      {TIPO_LABEL[f.tipo] ?? f.tipo}
+                    </span>
                   </td>
                   <td>{format(new Date(f.fechaVencimiento), 'dd/MM/yyyy')}</td>
                   <td>

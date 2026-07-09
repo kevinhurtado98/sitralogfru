@@ -33,9 +33,20 @@ function mapUsuario(u: { id: number; nombres: string; apellidos: string; email: 
   return { id: u.id, nombres: u.nombres, apellidos: u.apellidos, email: u.email, activo: u.activo, notificaciones: u.notificaciones, rol: u.rol.nombre }
 }
 
-async function getRolId(nombre: string): Promise<number | null> {
-  const rol = await prisma.rol.findUnique({ where: { nombre }, select: { id: true } })
-  return rol?.id ?? null
+const ROL_DESCRIPCION: Record<'ADMIN' | 'ASISTENTE', string> = {
+  ADMIN: 'Acceso total al sistema',
+  ASISTENTE: 'Acceso estándar al sistema',
+}
+
+// Garantiza que el rol exista aunque el seed no se haya ejecutado en el entorno
+async function getRolId(nombre: 'ADMIN' | 'ASISTENTE'): Promise<number> {
+  const rol = await prisma.rol.upsert({
+    where: { nombre },
+    update: { activo: true },
+    create: { nombre, descripcion: ROL_DESCRIPCION[nombre] },
+    select: { id: true },
+  })
+  return rol.id
 }
 
 type CrearResult = Ok & { emailEnviado?: boolean; emailError?: string }
@@ -47,10 +58,8 @@ export async function crearUsuario(data: {
   const parsed = schema.safeParse(rest)
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }
 
-  const rolId = await getRolId(parsed.data.rol)
-  if (!rolId) return { ok: false, error: 'Rol no válido' }
-
   try {
+    const rolId = await getRolId(parsed.data.rol)
     const password = await bcrypt.hash(DEFAULT_PASSWORD, 10)
     const u = await prisma.user.create({
       data: { nombres: parsed.data.nombres, apellidos: parsed.data.apellidos, email: parsed.data.email, password, rolId, notificaciones: notificaciones ?? true },
@@ -85,10 +94,8 @@ export async function editarUsuario(id: number, data: {
   const parsed = schema.safeParse(rest)
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }
 
-  const rolId = await getRolId(parsed.data.rol)
-  if (!rolId) return { ok: false, error: 'Rol no válido' }
-
   try {
+    const rolId = await getRolId(parsed.data.rol)
     const anterior = await prisma.user.findUnique({ where: { id }, select: userSelect })
     const u = await prisma.user.update({
       where: { id },
