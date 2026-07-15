@@ -17,6 +17,7 @@ const TIPO_LABEL: Record<string, string> = { COMPRA: "Compra", SERVICIO: "Servic
 
 interface FilaExport {
   serie: string; numero: string; proveedor: string; tipo: string;
+  ordenCompra: string | null;
   fechaVencimiento: Date; moneda: string; montoNeto: Prisma.Decimal;
   semanaPago: number | null; formaPago: string | null; estado: string;
   registradoContable: boolean; fechaPago: Date | null;
@@ -26,6 +27,7 @@ const COLUMNAS: ColumnaExcel<FilaExport>[] = [
   { header: "N° Factura", width: 18, value: (f) => `${f.serie}-${f.numero}` },
   { header: "Proveedor", width: 32, value: (f) => f.proveedor },
   { header: "Tipo", width: 12, value: (f) => TIPO_LABEL[f.tipo] ?? f.tipo },
+  { header: "Orden compra", width: 16, value: (f) => f.ordenCompra ?? "" },
   { header: "F. Vencimiento", width: 16, value: (f) => format(f.fechaVencimiento, "dd/MM/yyyy") },
   { header: "Moneda", width: 10, value: (f) => f.moneda === "SOLES" ? "PEN" : f.moneda === "DOLARES" ? "USD" : "EUR" },
   { header: "Monto a pagar", width: 16, value: (f) => `${MONEDA_PRE[f.moneda]} ${Number(f.montoNeto).toFixed(2)}` },
@@ -44,6 +46,7 @@ export async function GET(request: NextRequest) {
 
   const params = request.nextUrl.searchParams;
   const q = params.get("q")?.trim();
+  const orden = params.get("orden")?.trim();
   const tipo = params.get("tipo");
   const estado = params.get("estado");
   const desde = params.get("desde");
@@ -59,6 +62,7 @@ export async function GET(request: NextRequest) {
       { numero: { contains: q } },
     ];
   }
+  if (orden) where.ordenCompra = { contains: orden };
   if (tipo) where.tipo = tipo;
   if (estado) where.estado = estado;
   if (desde || hasta) {
@@ -81,7 +85,7 @@ export async function GET(request: NextRequest) {
     where,
     orderBy: { fechaVencimiento: "asc" },
     select: {
-      serie: true, numero: true, proveedor: true, tipo: true, fechaVencimiento: true,
+      serie: true, numero: true, proveedor: true, tipo: true, ordenCompra: true, fechaVencimiento: true,
       moneda: true, montoNeto: true, semanaPago: true, formaPago: true,
       estado: true, registradoContable: true, fechaPago: true,
     },

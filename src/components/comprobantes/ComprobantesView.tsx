@@ -22,6 +22,7 @@ export interface FacturaRow {
   fechaVencimiento: Date | string
   moneda: string
   tipo: string
+  ordenCompra: string | null
   montoNeto: number
   estado: string
   formaPago: string | null
@@ -95,6 +96,7 @@ export function ComprobantesView({ facturas: initial }: { facturas: FacturaRow[]
 
   // Filtros
   const [busqueda,       setBusqueda]       = useState('')
+  const [filtroOrden,    setFiltroOrden]    = useState('')
   const [filtroTipo,     setFiltroTipo]     = useState('')
   const [filtroEstado,   setFiltroEstado]   = useState('')
   const [filtroDesde,    setFiltroDesde]    = useState('')
@@ -119,6 +121,10 @@ export function ComprobantesView({ facturas: initial }: { facturas: FacturaRow[]
         `${f.serie}-${f.numero}`.toLowerCase().includes(q)
       )
     }
+    if (filtroOrden) {
+      const q = filtroOrden.toLowerCase()
+      r = r.filter((f) => f.ordenCompra?.toLowerCase().includes(q))
+    }
     if (filtroTipo)   r = r.filter((f) => f.tipo === filtroTipo)
     if (filtroEstado) r = r.filter((f) => f.estado === filtroEstado)
     if (filtroDesde)  r = r.filter((f) => new Date(f.fechaVencimiento) >= new Date(filtroDesde))
@@ -134,12 +140,13 @@ export function ComprobantesView({ facturas: initial }: { facturas: FacturaRow[]
     if (filtroContable === 'registrado')  r = r.filter((f) => f.registradoContable)
 
     return r
-  }, [facturas, busqueda, filtroTipo, filtroEstado, filtroDesde, filtroHasta, filtroSemana, filtroContable])
+  }, [facturas, busqueda, filtroOrden, filtroTipo, filtroEstado, filtroDesde, filtroHasta, filtroSemana, filtroContable])
 
   const sortAccessors = useMemo<Record<string, SortAccessor<FacturaRow>>>(() => ({
     numero:          (f) => `${f.serie}-${f.numero}`,
     proveedor:       (f) => f.proveedor,
     tipo:            (f) => TIPO_LABEL[f.tipo] ?? f.tipo,
+    ordenCompra:     (f) => f.ordenCompra ?? '',
     fechaVencimiento:(f) => new Date(f.fechaVencimiento),
     moneda:          (f) => f.moneda,
     monto:           (f) => f.montoNeto,
@@ -156,13 +163,14 @@ export function ComprobantesView({ facturas: initial }: { facturas: FacturaRow[]
   } = useTableData(filtradas, sortAccessors, 20)
 
   function limpiarFiltros() {
-    setBusqueda(''); setFiltroTipo(''); setFiltroEstado(''); setFiltroDesde('')
+    setBusqueda(''); setFiltroOrden(''); setFiltroTipo(''); setFiltroEstado(''); setFiltroDesde('')
     setFiltroHasta(''); setFiltroSemana(''); setFiltroContable('')
   }
 
   function exportarExcel() {
     const params = new URLSearchParams()
     if (busqueda)       params.set('q', busqueda)
+    if (filtroOrden)    params.set('orden', filtroOrden)
     if (filtroTipo)     params.set('tipo', filtroTipo)
     if (filtroEstado)   params.set('estado', filtroEstado)
     if (filtroDesde)    params.set('desde', filtroDesde)
@@ -217,7 +225,7 @@ export function ComprobantesView({ facturas: initial }: { facturas: FacturaRow[]
     })
   }
 
-  const hayFiltros = busqueda || filtroTipo || filtroEstado || filtroDesde || filtroHasta || filtroSemana || filtroContable
+  const hayFiltros = busqueda || filtroOrden || filtroTipo || filtroEstado || filtroDesde || filtroHasta || filtroSemana || filtroContable
 
   return (
     <>
@@ -250,6 +258,10 @@ export function ComprobantesView({ facturas: initial }: { facturas: FacturaRow[]
           <div className="fg" style={{ maxWidth: 110 }}>
             <label>Semana pago</label>
             <input type="number" placeholder="20" min={1} max={53} value={filtroSemana} onChange={(e) => setFiltroSemana(e.target.value)} />
+          </div>
+          <div className="fg" style={{ maxWidth: 150 }}>
+            <label>N° orden compra</label>
+            <input type="text" placeholder="Buscar orden..." value={filtroOrden} onChange={(e) => setFiltroOrden(e.target.value)} />
           </div>
           <div className="fg" style={{ maxWidth: 130 }}>
             <label>Tipo</label>
@@ -369,6 +381,7 @@ export function ComprobantesView({ facturas: initial }: { facturas: FacturaRow[]
                 <SortableTh label="N° Factura" sortKey="numero" activeKey={sortKey} dir={sortDir} onSort={toggleSort} />
                 <SortableTh label="Proveedor" sortKey="proveedor" activeKey={sortKey} dir={sortDir} onSort={toggleSort} />
                 <SortableTh label="Tipo" sortKey="tipo" activeKey={sortKey} dir={sortDir} onSort={toggleSort} />
+                <SortableTh label="Orden compra" sortKey="ordenCompra" activeKey={sortKey} dir={sortDir} onSort={toggleSort} />
                 <SortableTh label="F. Vencimiento" sortKey="fechaVencimiento" activeKey={sortKey} dir={sortDir} onSort={toggleSort} />
                 <SortableTh label="Moneda" sortKey="moneda" activeKey={sortKey} dir={sortDir} onSort={toggleSort} />
                 <SortableTh label="Monto a pagar" sortKey="monto" activeKey={sortKey} dir={sortDir} onSort={toggleSort} />
@@ -382,7 +395,7 @@ export function ComprobantesView({ facturas: initial }: { facturas: FacturaRow[]
             <tbody>
               {pageData.length === 0 ? (
                 <tr>
-                  <td colSpan={12} style={{ textAlign: 'center', padding: '40px 0', color: 'var(--t3)' }}>
+                  <td colSpan={13} style={{ textAlign: 'center', padding: '40px 0', color: 'var(--t3)' }}>
                     No hay facturas registradas
                   </td>
                 </tr>
@@ -410,6 +423,11 @@ export function ComprobantesView({ facturas: initial }: { facturas: FacturaRow[]
                     <span className={`badge ${f.tipo === 'COMPRA' ? 'badge-blue' : 'badge-slate'}`}>
                       {TIPO_LABEL[f.tipo] ?? f.tipo}
                     </span>
+                  </td>
+                  <td>
+                    {f.ordenCompra
+                      ? <span style={{ fontFamily: 'var(--fm)', fontSize: 12 }}>{f.ordenCompra}</span>
+                      : <span style={{ color: 'var(--t3)' }}>—</span>}
                   </td>
                   <td>{format(new Date(f.fechaVencimiento), 'dd/MM/yyyy')}</td>
                   <td>

@@ -12,6 +12,7 @@ export default async function ComprobantesPage() {
       fechaVencimiento: true,
       moneda: true,
       tipo: true,
+      ordenCompra: true,
       montoNeto: true,
       estado: true,
       formaPago: true,
